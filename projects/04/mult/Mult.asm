@@ -10,6 +10,7 @@
 // R0 >= 0, R1 >= 0, and R0*R1 < 32768.
 
 // Put your code here.
+// All variables declaration
 @count
 M=0
 
