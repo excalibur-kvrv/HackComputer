@@ -1,9 +1,13 @@
 from command import Command
+import os
 
 class CodeWriter:
   def __init__(self, output_file=None, stream=None):
     if not (output_file or stream):
       raise ValueError("Output file or a write stream must be provided.")
+    
+    _, file_name = os.path.split(output_file)
+    self.file_name = file_name
     
     if output_file:
       self.stream = open(output_file, "w")
@@ -204,6 +208,10 @@ class CodeWriter:
   def __push_cmd(self, segment: str, index: int):
     if segment in self.segment_addresses:
       addr = self.segment_addresses[segment]
+      
+      if segment == "temp":
+        index = int(addr) + int(index)
+
       instructions = [
         f"@{index}",
         "D=A",
@@ -211,6 +219,31 @@ class CodeWriter:
         "A=D+M",
         "D=M",
         "@SP",
+        "A=M",
+        "M=D",
+        "@SP",
+        "M=M+1"
+      ]
+    elif segment == "static":
+      instructions = [
+        f"@{self.file_name.replace('.asm', '')}.{index}",
+        "D=M",
+        "@SP",
+        "A=M",
+        "M=D",
+        "@SP",
+        "M=M+1"
+      ]
+    elif segment == "pointer":
+      if index == "0":
+        addr = "THIS"
+      elif index == "1":
+        addr = "THAT"
+
+      instructions = [
+        f"@{addr}",
+        "D=M",
+        f"@SP",
         "A=M",
         "M=D",
         "@SP",
@@ -231,6 +264,10 @@ class CodeWriter:
   def __pop_cmd(self, segment: str, index: int):
     if segment in self.segment_addresses:
       addr = self.segment_addresses[segment]
+      
+      if segment == "temp":
+        index = int(addr) + int(index)
+      
       instructions = [
         f"@{index}",
         "D=A",
@@ -246,6 +283,29 @@ class CodeWriter:
         "@addr",
         "A=M",
         "M=D"
+      ]
+    elif segment == "static":
+      instructions = [
+        "@SP",
+        "M=M-1",
+        "A=M",
+        "D=M",
+        f"@{self.file_name.replace('.asm', '')}.{index}",
+        "M=D"
+      ]
+    elif segment == "pointer":
+      if index == "0":
+        addr = "THIS"
+      elif index == "1":
+        addr = "THAT"
+      
+      instructions = [
+        "@SP",
+        "M=M-1",
+        "A=M",
+        "D=M",
+        f"@{addr}",
+        "M=D",
       ]
     self.__write_instructions(instructions)    
   
