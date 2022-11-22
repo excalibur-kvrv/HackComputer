@@ -24,10 +24,21 @@ class CodeWriter:
       "or": self.__write_or,
       "not": self.__write_not
     }
+    
+    self.instruction_written_count = 0
+    
+    self.segment_addresses = {
+      "temp": "5",
+      "local": "LCL",
+      "argument": "ARG",
+      "this": "THIS",
+      "that": "THAT"
+    }
   
   def __write_instructions(self, instructions):
     for instruction in instructions:
       self.stream.write(f"{instruction}\n")
+    self.instruction_written_count += len(instructions)
   
   def __write_and(self):
     instructions = [
@@ -92,6 +103,7 @@ class CodeWriter:
     self.__write_instructions(instructions)
   
   def __write_eq(self):
+    jump_pos = self.instruction_written_count + 23
     instructions = [
       "@SP",
       "M=M-1",
@@ -99,27 +111,29 @@ class CodeWriter:
       "D=M",
       "A=A-1",
       "D=M-D",
-      "@EQUAL",
+      f"@EQUAL{jump_pos}",
       "D;JEQ",
-      "@NOTEQUAL",
+      f"@NOTEQUAL{jump_pos}",
       "0;JMP",
-      "(EQUAL)",
+      f"(EQUAL{jump_pos})",
       " @SP",
       " A=M-1",
-      " M=1",
-      " @EQUALEND",
+      " M=-1",
+      f" @EQEND{jump_pos}",
       " 0;JMP",
-      "(NOTEQUAL)",
+      f"(NOTEQUAL{jump_pos})",
       " @SP",
       " A=M-1",
       " M=0",
-      " @EQUALEND",
+      f" @EQEND{jump_pos}",
       " 0;JMP",
-      "(EQUALEND)"
+      f"(EQEND{jump_pos})",
+      " 0",
     ]
     self.__write_instructions(instructions)
   
   def __write_gt(self):
+    jump_pos = self.instruction_written_count + 23
     instructions = [
       "@SP",
       "M=M-1",
@@ -127,27 +141,29 @@ class CodeWriter:
       "D=M",
       "A=A-1",
       "D=D-M",
-      "@GREATERTHAN",
+      f"@GREATERTHAN{jump_pos}",
       "D;JLT",
-      "@NOTGREATERTHAN",
+      f"@NOTGREATERTHAN{jump_pos}",
       "0;JMP",
-      "(GREATERTHAN)",
+      f"(GREATERTHAN{jump_pos})",
       " @SP",
       " A=M-1",
-      " M=1",
-      " @GREATERTHANEND",
+      " M=-1",
+      f" @EQEND{jump_pos}",
       " 0;JMP",
-      "(NOTGREATERTHAN)",
+      f"(NOTGREATERTHAN{jump_pos})",
       " @SP",
       " A=M-1",
       " M=0",
-      " @GREATERTHANEND",
+      f" @EQEND{jump_pos}",
       " 0;JMP",
-      "(GREATERTHANEND)"
+      f"(EQEND{jump_pos})",
+      " 0"
     ]
     self.__write_instructions(instructions)
   
   def __write_lt(self):
+    jump_pos = self.instruction_written_count + 23
     instructions = [
       "@SP",
       "M=M-1",
@@ -155,32 +171,91 @@ class CodeWriter:
       "D=M",
       "A=A-1",
       "D=D-M",
-      "@LESSTHAN",
+      f"@LESSTHAN{jump_pos}",
       "D;JGT",
-      "@NOTLESSTHAN",
+      f"@NOTLESSTHAN{jump_pos}",
       "0;JMP",
-      "(LESSTHAN)",
+      f"(LESSTHAN{jump_pos})",
       " @SP",
       " A=M-1",
-      " M=1",
-      " @LESSTHANEND",
+      " M=-1",
+      f" @LTEND{jump_pos}",
       " 0;JMP",
-      "(NOTLESSTHAN)",
+      f"(NOTLESSTHAN{jump_pos})",
       " @SP",
       " A=M-1",
       " M=0",
-      " @LESSTHANEND",
+      f" @LTEND{jump_pos}",
       " 0;JMP",
-      "(LESSTHANEND)"
+      f"(LTEND{jump_pos})",
+      "0"
     ]
     self.__write_instructions(instructions)
     
   def writeArithmetic(self, command: str):
-    fn = self.arithmetic_fns[command]
-    fn()
+    self.arithmetic_fns[command]()
   
   def writePushPop(self, command: Command, segment: str, index: int):
-    pass
+    if command == Command.C_PUSH:
+      self.__push_cmd(segment, index)
+    elif command == Command.C_POP:
+      self.__pop_cmd(segment, index)
+  
+  def __push_cmd(self, segment: str, index: int):
+    if segment in self.segment_addresses:
+      addr = self.segment_addresses[segment]
+      instructions = [
+        f"@{index}",
+        "D=A",
+        f"@{addr}",
+        "A=D+M",
+        "D=M",
+        "@SP",
+        "A=M",
+        "M=D",
+        "@SP",
+        "M=M+1"
+      ]
+    elif segment == "constant":
+      instructions = [
+        f"@{index}",
+        "D=A",
+        "@SP",
+        "A=M",
+        "M=D",
+        "@SP",
+        "M=M+1"
+      ]
+    self.__write_instructions(instructions)
+  
+  def __pop_cmd(self, segment: str, index: int):
+    if segment in self.segment_addresses:
+      addr = self.segment_addresses[segment]
+      instructions = [
+        f"@{index}",
+        "D=A",
+        f"@{addr}",
+        "A=D+M",
+        "D=A",
+        "@addr",
+        "M=D",
+        "@SP",
+        "M=M-1",
+        "A=M",
+        "D=M",
+        "@addr",
+        "A=M",
+        "M=D"
+      ]
+    self.__write_instructions(instructions)    
   
   def close(self):
+    instructions = [
+      "@END",
+      "0;JMP",
+      "(END)",
+      " @END",
+      " 0;JMP"
+    ]
+    self.__write_instructions(instructions)
     self.stream.close()
