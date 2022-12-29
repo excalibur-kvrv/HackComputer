@@ -205,6 +205,30 @@ class CodeWriter:
     elif command == Command.C_POP:
       self.__pop_cmd(segment, index)
   
+  def writeLabel(self, label: str):
+    instructions = [
+      f"({label.upper()})"
+    ]
+    self.__write_instructions(instructions)
+  
+  def writeGoto(self, label: str):
+    instructions = [
+      f"@{label.upper()}",
+      "0;JMP"
+    ]
+    self.__write_instructions(instructions)
+  
+  def writeIf(self, label: str):
+    instructions = [
+      "@SP",
+      "M=M-1",
+      "A=M",
+      "D=M",
+      f"@{label.upper()}",
+      "D;JNE"
+    ]
+    self.__write_instructions(instructions)
+    
   def __push_cmd(self, segment: str, index: int):
     if segment in self.segment_addresses:
       addr = self.segment_addresses[segment]

@@ -6,6 +6,10 @@ import os
 
 
 if __name__ == "__main__":
+  """usage:- python3 VMTranslator.py <path-to-vm file>
+
+  Generates a .asm file with same file name in location of .vm file
+  """
   arg_parse = argparse.ArgumentParser()
   arg_parse.add_argument("vm_file", help="Enter path of vm code file")
   args = arg_parse.parse_args()
@@ -29,6 +33,11 @@ if __name__ == "__main__":
         code_writer.writeArithmetic(arg1)
       elif command_type == Command.C_POP or command_type == Command.C_PUSH:
         code_writer.writePushPop(command_type, arg1, arg2)
-
+      elif command_type == Command.C_LABEL:
+        code_writer.writeLabel(arg1)
+      elif command_type == Command.C_GOTO:
+        code_writer.writeGoto(arg1)
+      elif command_type == Command.C_IF:
+        code_writer.writeIf(arg1)
   finally:
     code_writer.close()
