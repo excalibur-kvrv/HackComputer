@@ -38,6 +38,18 @@ class CodeWriter:
       "this": "THIS",
       "that": "THAT"
     }
+    
+    self.__write_bootstrap_code()
+  
+  def __write_bootstrap_code(self):
+    instructions = [
+      "@256",
+      "D=A",
+      "@SP",
+      "M=D"
+    ]
+    self.__write_instructions(instructions)
+    self.writeCall("Sys.init", 0)
   
   def __write_instructions(self, instructions):
     for instruction in instructions:
@@ -207,13 +219,13 @@ class CodeWriter:
   
   def writeLabel(self, label: str):
     instructions = [
-      f"({label.upper()})"
+      f"({label})"
     ]
     self.__write_instructions(instructions)
   
   def writeGoto(self, label: str):
     instructions = [
-      f"@{label.upper()}",
+      f"@{label}",
       "0;JMP"
     ]
     self.__write_instructions(instructions)
@@ -224,10 +236,135 @@ class CodeWriter:
       "M=M-1",
       "A=M",
       "D=M",
-      f"@{label.upper()}",
+      f"@{label}",
       "D;JNE"
     ]
     self.__write_instructions(instructions)
+  
+  def __get_push_instructions(self):
+    return [
+      "@SP",
+      "A=M",
+      "M=D",
+      "@SP",
+      "M=M+1"
+    ]
+  
+  def setFileName(self, fileName: str):
+    self.file_name = fileName
+  
+  def writeFunction(self, functionName: str, nVars: int):
+    push_instructions = self.__get_push_instructions()
+    
+    instructions = [
+      f"({functionName})"
+    ]
+    
+    for _ in range(nVars):
+      instructions.extend([
+        *push_instructions,
+        "@SP",
+        "A=M",
+        "M=0"
+      ])
+    self.__write_instructions(instructions)
+     
+  def writeCall(self, functionName: str, nArgs: int):
+    push_instructions = self.__get_push_instructions()
+    return_label = f"{functionName}$ret.{self.instruction_written_count}"
+    instructions = [
+      f"@{return_label}",
+      "D=A",
+      *push_instructions,
+      "@LCL",
+      "D=M",
+      *push_instructions,
+      "@ARG",
+      "D=M",
+      *push_instructions,
+      "@THIS",
+      "D=M",
+      *push_instructions,
+      "@THAT",
+      "D=M",
+      *push_instructions,
+      "@SP",
+      "D=M",
+      "@ARG",
+      "M=D",
+      "@5",
+      "D=A",
+      "@ARG",
+      "M=M-D",
+      f"@{nArgs}",
+      "D=A",
+      "@ARG",
+      "M=M-D",
+      "@SP",
+      "D=M",
+      "@LCL",
+      "M=D"
+    ]
+    
+    self.__write_instructions(instructions)
+    self.writeGoto(functionName)
+    self.__write_instructions([
+      f"({return_label})"
+    ])
+  
+  def writeReturn(self):
+    instructions = [
+      "@LCL",
+      "D=M",
+      "@frame",
+      "M=D",
+      "@returnAddr",
+      "M=D",
+      "@5",
+      "D=A",
+      "@returnAddr",
+      "M=M-D",
+      "A=M",
+      "D=M",
+      "@returnAddr",
+      "M=D",
+      "@SP",
+      "M=M-1",
+      "A=M",
+      "D=M",
+      "@ARG",
+      "A=M",
+      "M=D",
+      "@ARG",
+      "D=M",
+      "@SP",
+      "M=D",
+      "M=M+1"
+    ]
+    
+    memory_segments = [ "THAT", "THIS", "ARG", "LCL" ]
+    for index, segment in enumerate(memory_segments, start=1):
+      instructions.extend([
+        "@frame",
+        "D=M",
+        f"@{segment}",
+        "M=D",
+        f"@{index}",
+        "D=A",
+        f"@{segment}",
+        "M=M-D",
+        "A=M",
+        "D=M",
+        f"@{segment}",
+        "M=D"
+      ])
+    instructions.extend([
+      "@returnAddr",
+      "A=M",
+      "0;JMP"
+    ])
+    self.__write_instructions(instructions)
+      
     
   def __push_cmd(self, segment: str, index: int):
     if segment in self.segment_addresses:
@@ -290,24 +427,45 @@ class CodeWriter:
       addr = self.segment_addresses[segment]
       
       if segment == "temp":
-        index = int(addr) + int(index)
-      
-      instructions = [
-        f"@{index}",
-        "D=A",
-        f"@{addr}",
-        "A=D+M",
-        "D=A",
-        "@addr",
-        "M=D",
-        "@SP",
-        "M=M-1",
-        "A=M",
-        "D=M",
-        "@addr",
-        "A=M",
-        "M=D"
-      ]
+        index = int(index)
+        instructions = [
+          "@5",
+          "D=A",
+          "@addr",
+          "M=D",
+          f"@{index}",
+          "D=A",
+          "@addr",
+          "M=D+M",
+          "@SP",
+          "M=M-1",
+          "A=M",
+          "D=M",
+          "@addr",
+          "A=M",
+          "M=D",
+          "@addr",
+          "M=0"
+        ]
+      else:
+        instructions = [
+          f"@{index}",
+          "D=A",
+          f"@{addr}",
+          "A=D+M",
+          "D=A",
+          "@addr",
+          "M=D",
+          "@SP",
+          "M=M-1",
+          "A=M",
+          "D=M",
+          "@addr",
+          "A=M",
+          "M=D",
+          "@addr",
+          "M=0"
+        ]
     elif segment == "static":
       instructions = [
         "@SP",

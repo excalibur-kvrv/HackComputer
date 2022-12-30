@@ -52,6 +52,14 @@ class Parser:
       elif command == "if-goto":
         self.command = Command.C_IF
         self.__create_command(Command.C_IF, tokens)
+      elif command == "call":
+        self.command = Command.C_CALL
+        self.__create_command(Command.C_CALL, tokens)
+      elif command == "function":
+        self.command = Command.C_FUNCTION
+        self.__create_command(Command.C_FUNCTION, tokens)
+      elif command == "return":
+        self.command = Command.C_RETURN
       else:
         self.current_line += 1
         return self.advance()
