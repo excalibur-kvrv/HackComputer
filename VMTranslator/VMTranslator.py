@@ -3,6 +3,7 @@ from codewriter import CodeWriter
 from command import Command
 import argparse
 import os
+import re
 
 
 if __name__ == "__main__":
@@ -46,7 +47,7 @@ if __name__ == "__main__":
         if command_type == Command.C_ARITHMETIC:
           code_writer.writeArithmetic(arg1)
         elif command_type == Command.C_POP or command_type == Command.C_PUSH:
-          code_writer.writePushPop(command_type, arg1, int(arg2))
+          code_writer.writePushPop(command_type, arg1, int(re.sub(r'[\s/]+', '', arg2)))
         elif command_type == Command.C_LABEL:
           code_writer.writeLabel(arg1)
         elif command_type == Command.C_GOTO:

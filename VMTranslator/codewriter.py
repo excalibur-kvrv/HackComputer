@@ -252,40 +252,38 @@ class CodeWriter:
     self.file_name = fileName
   
   def writeFunction(self, functionName: str, nVars: int):
-    push_instructions = self.__get_push_instructions()
-    
     instructions = [
       f"({functionName})"
     ]
     
     for _ in range(nVars):
       instructions.extend([
-        *push_instructions,
         "@SP",
+        "D=A",
         "A=M",
-        "M=0"
+        "M=D",
+        "@SP",
+        "M=M+1",
       ])
     self.__write_instructions(instructions)
      
   def writeCall(self, functionName: str, nArgs: int):
     push_instructions = self.__get_push_instructions()
-    return_label = f"{functionName}$ret.{self.instruction_written_count}"
+    
+    common_instructions = []
+    for segment in ["LCL", "ARG", "THIS", "THAT"]:
+      common_instructions.extend([
+        f"@{segment}",
+        "D=M",
+        *push_instructions
+      ])
+    
+    return_label = f"{functionName}$ret.{self.instruction_written_count+1}"
     instructions = [
       f"@{return_label}",
       "D=A",
       *push_instructions,
-      "@LCL",
-      "D=M",
-      *push_instructions,
-      "@ARG",
-      "D=M",
-      *push_instructions,
-      "@THIS",
-      "D=M",
-      *push_instructions,
-      "@THAT",
-      "D=M",
-      *push_instructions,
+      *common_instructions,
       "@SP",
       "D=M",
       "@ARG",
@@ -316,13 +314,8 @@ class CodeWriter:
       "D=M",
       "@frame",
       "M=D",
-      "@returnAddr",
-      "M=D",
       "@5",
-      "D=A",
-      "@returnAddr",
-      "M=M-D",
-      "A=M",
+      "A=D-A",
       "D=M",
       "@returnAddr",
       "M=D",
@@ -394,9 +387,9 @@ class CodeWriter:
         "M=M+1"
       ]
     elif segment == "pointer":
-      if index == "0":
+      if index == 0:
         addr = "THIS"
-      elif index == "1":
+      elif index == 1:
         addr = "THAT"
 
       instructions = [
@@ -426,6 +419,7 @@ class CodeWriter:
       
       if segment == "temp":
         instructions = [
+          f"// pop temp {index}",
           "@5",
           "D=A",
           "@addr",
@@ -473,9 +467,9 @@ class CodeWriter:
         "M=D"
       ]
     elif segment == "pointer":
-      if index == "0":
+      if index == 0:
         addr = "THIS"
-      elif index == "1":
+      elif index == 1:
         addr = "THAT"
       
       instructions = [

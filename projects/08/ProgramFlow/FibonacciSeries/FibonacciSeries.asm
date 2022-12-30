@@ -35,6 +35,8 @@ D=M
 @addr
 A=M
 M=D
+@addr
+M=0
 @1
 D=A
 @SP
@@ -56,6 +58,8 @@ D=M
 @addr
 A=M
 M=D
+@addr
+M=0
 @0
 D=A
 @ARG
@@ -95,6 +99,8 @@ D=M
 @addr
 A=M
 M=D
+@addr
+M=0
 (MAIN_LOOP_START)
 @0
 D=A
@@ -155,6 +161,8 @@ D=M
 @addr
 A=M
 M=D
+@addr
+M=0
 @THAT
 D=M
 @SP
@@ -220,6 +228,8 @@ D=M
 @addr
 A=M
 M=D
+@addr
+M=0
 @MAIN_LOOP_START
 0;JMP
 (END_PROGRAM)
