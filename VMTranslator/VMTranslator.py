@@ -31,6 +31,8 @@ if __name__ == "__main__":
     raise ValueError("Enter a valid vm file path")
   
   code_writer = CodeWriter(output_file=output_file)
+  if len(files_to_translate) > 1:
+    code_writer.writeBootstrapCode()
   
   for file in files_to_translate:
     parser = Parser(input_file=file)
@@ -44,7 +46,7 @@ if __name__ == "__main__":
         if command_type == Command.C_ARITHMETIC:
           code_writer.writeArithmetic(arg1)
         elif command_type == Command.C_POP or command_type == Command.C_PUSH:
-          code_writer.writePushPop(command_type, arg1, arg2)
+          code_writer.writePushPop(command_type, arg1, int(arg2))
         elif command_type == Command.C_LABEL:
           code_writer.writeLabel(arg1)
         elif command_type == Command.C_GOTO:
