@@ -38,10 +38,8 @@ class CodeWriter:
       "this": "THIS",
       "that": "THAT"
     }
-    
-    self.__write_bootstrap_code()
   
-  def __write_bootstrap_code(self):
+  def writeBootstrapCode(self):
     instructions = [
       "@256",
       "D=A",
@@ -427,7 +425,6 @@ class CodeWriter:
       addr = self.segment_addresses[segment]
       
       if segment == "temp":
-        index = int(index)
         instructions = [
           "@5",
           "D=A",
