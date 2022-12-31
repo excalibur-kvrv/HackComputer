@@ -1,0 +1,1 @@
+VMTranslator is a script that turns hack computer VM code into Hack assembly that can then be run on the cpu emulator.
