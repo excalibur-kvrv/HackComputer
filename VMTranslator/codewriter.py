@@ -47,134 +47,6 @@ class CodeWriter:
         self.__write_instructions(instructions)
         self.writeCall("Sys.init", 0)
 
-    def __write_instructions(self, instructions):
-        for instruction in instructions:
-            self.stream.write(f"{instruction}\n")
-        self.instruction_written_count += len(instructions)
-
-    def __write_and(self):
-        instructions = ["@SP", "M=M-1", "A=M", "D=M", "A=A-1", "M=D&M"]
-        self.__write_instructions(instructions)
-
-    def __write_or(self):
-        instructions = ["@SP", "M=M-1", "A=M", "D=M", "A=A-1", "M=D|M"]
-        self.__write_instructions(instructions)
-
-    def __write_not(self):
-        instructions = ["@SP", "A=M-1", "M=!M"]
-        self.__write_instructions(instructions)
-
-    def __write_add(self):
-        instructions = ["@SP", "M=M-1", "A=M", "D=M", "A=A-1", "M=M+D"]
-        self.__write_instructions(instructions)
-
-    def __write_sub(self):
-        instructions = [
-            "@SP",
-            "M=M-1",
-            "A=M-1",
-            "D=M",
-            "A=A+1",
-            "D=D-M",
-            "A=A-1",
-            "M=D",
-        ]
-        self.__write_instructions(instructions)
-
-    def __write_neg(self):
-        instructions = ["@SP", "A=M-1", "M=-M"]
-        self.__write_instructions(instructions)
-
-    def __write_eq(self):
-        jump_pos = self.instruction_written_count + 23
-        instructions = [
-            "@SP",
-            "M=M-1",
-            "A=M",
-            "D=M",
-            "A=A-1",
-            "D=M-D",
-            f"@EQUAL{jump_pos}",
-            "D;JEQ",
-            f"@NOTEQUAL{jump_pos}",
-            "0;JMP",
-            f"(EQUAL{jump_pos})",
-            " @SP",
-            " A=M-1",
-            " M=-1",
-            f" @EQEND{jump_pos}",
-            " 0;JMP",
-            f"(NOTEQUAL{jump_pos})",
-            " @SP",
-            " A=M-1",
-            " M=0",
-            f" @EQEND{jump_pos}",
-            " 0;JMP",
-            f"(EQEND{jump_pos})",
-            " 0",
-        ]
-        self.__write_instructions(instructions)
-
-    def __write_gt(self):
-        jump_pos = self.instruction_written_count + 23
-        instructions = [
-            "@SP",
-            "M=M-1",
-            "A=M",
-            "D=M",
-            "A=A-1",
-            "D=D-M",
-            f"@GREATERTHAN{jump_pos}",
-            "D;JLT",
-            f"@NOTGREATERTHAN{jump_pos}",
-            "0;JMP",
-            f"(GREATERTHAN{jump_pos})",
-            " @SP",
-            " A=M-1",
-            " M=-1",
-            f" @EQEND{jump_pos}",
-            " 0;JMP",
-            f"(NOTGREATERTHAN{jump_pos})",
-            " @SP",
-            " A=M-1",
-            " M=0",
-            f" @EQEND{jump_pos}",
-            " 0;JMP",
-            f"(EQEND{jump_pos})",
-            " 0",
-        ]
-        self.__write_instructions(instructions)
-
-    def __write_lt(self):
-        jump_pos = self.instruction_written_count + 23
-        instructions = [
-            "@SP",
-            "M=M-1",
-            "A=M",
-            "D=M",
-            "A=A-1",
-            "D=D-M",
-            f"@LESSTHAN{jump_pos}",
-            "D;JGT",
-            f"@NOTLESSTHAN{jump_pos}",
-            "0;JMP",
-            f"(LESSTHAN{jump_pos})",
-            " @SP",
-            " A=M-1",
-            " M=-1",
-            f" @LTEND{jump_pos}",
-            " 0;JMP",
-            f"(NOTLESSTHAN{jump_pos})",
-            " @SP",
-            " A=M-1",
-            " M=0",
-            f" @LTEND{jump_pos}",
-            " 0;JMP",
-            f"(LTEND{jump_pos})",
-            "0",
-        ]
-        self.__write_instructions(instructions)
-
     def writeArithmetic(self, command: str):
         self.arithmetic_fns[command]()
 
@@ -195,9 +67,6 @@ class CodeWriter:
     def writeIf(self, label: str):
         instructions = ["@SP", "M=M-1", "A=M", "D=M", f"@{label}", "D;JNE"]
         self.__write_instructions(instructions)
-
-    def __get_push_instructions(self):
-        return ["@SP", "A=M", "M=D", "@SP", "M=M+1"]
 
     def setFileName(self, fileName: str):
         self.file_name = fileName
@@ -345,7 +214,6 @@ class CodeWriter:
 
             if segment == "temp":
                 instructions = [
-                    f"// pop temp {index}",
                     "@5",
                     "D=A",
                     "@addr",
@@ -406,6 +274,137 @@ class CodeWriter:
                 f"@{addr}",
                 "M=D",
             ]
+        self.__write_instructions(instructions)
+
+    def __get_push_instructions(self):
+        return ["@SP", "A=M", "M=D", "@SP", "M=M+1"]
+    
+    def __write_instructions(self, instructions):
+        for instruction in instructions:
+            self.stream.write(f"{instruction}\n")
+        self.instruction_written_count += len(instructions)
+
+    def __write_and(self):
+        instructions = ["@SP", "M=M-1", "A=M", "D=M", "A=A-1", "M=D&M"]
+        self.__write_instructions(instructions)
+
+    def __write_or(self):
+        instructions = ["@SP", "M=M-1", "A=M", "D=M", "A=A-1", "M=D|M"]
+        self.__write_instructions(instructions)
+
+    def __write_not(self):
+        instructions = ["@SP", "A=M-1", "M=!M"]
+        self.__write_instructions(instructions)
+
+    def __write_add(self):
+        instructions = ["@SP", "M=M-1", "A=M", "D=M", "A=A-1", "M=M+D"]
+        self.__write_instructions(instructions)
+
+    def __write_sub(self):
+        instructions = [
+            "@SP",
+            "M=M-1",
+            "A=M-1",
+            "D=M",
+            "A=A+1",
+            "D=D-M",
+            "A=A-1",
+            "M=D",
+        ]
+        self.__write_instructions(instructions)
+
+    def __write_neg(self):
+        instructions = ["@SP", "A=M-1", "M=-M"]
+        self.__write_instructions(instructions)
+
+    def __write_eq(self):
+        jump_pos = self.instruction_written_count + 23
+        instructions = [
+            "@SP",
+            "M=M-1",
+            "A=M",
+            "D=M",
+            "A=A-1",
+            "D=M-D",
+            f"@EQUAL{jump_pos}",
+            "D;JEQ",
+            f"@NOTEQUAL{jump_pos}",
+            "0;JMP",
+            f"(EQUAL{jump_pos})",
+            " @SP",
+            " A=M-1",
+            " M=-1",
+            f" @EQEND{jump_pos}",
+            " 0;JMP",
+            f"(NOTEQUAL{jump_pos})",
+            " @SP",
+            " A=M-1",
+            " M=0",
+            f" @EQEND{jump_pos}",
+            " 0;JMP",
+            f"(EQEND{jump_pos})",
+            " 0",
+        ]
+        self.__write_instructions(instructions)
+
+    def __write_gt(self):
+        jump_pos = self.instruction_written_count + 23
+        instructions = [
+            "@SP",
+            "M=M-1",
+            "A=M",
+            "D=M",
+            "A=A-1",
+            "D=D-M",
+            f"@GREATERTHAN{jump_pos}",
+            "D;JLT",
+            f"@NOTGREATERTHAN{jump_pos}",
+            "0;JMP",
+            f"(GREATERTHAN{jump_pos})",
+            " @SP",
+            " A=M-1",
+            " M=-1",
+            f" @EQEND{jump_pos}",
+            " 0;JMP",
+            f"(NOTGREATERTHAN{jump_pos})",
+            " @SP",
+            " A=M-1",
+            " M=0",
+            f" @EQEND{jump_pos}",
+            " 0;JMP",
+            f"(EQEND{jump_pos})",
+            " 0",
+        ]
+        self.__write_instructions(instructions)
+
+    def __write_lt(self):
+        jump_pos = self.instruction_written_count + 23
+        instructions = [
+            "@SP",
+            "M=M-1",
+            "A=M",
+            "D=M",
+            "A=A-1",
+            "D=D-M",
+            f"@LESSTHAN{jump_pos}",
+            "D;JGT",
+            f"@NOTLESSTHAN{jump_pos}",
+            "0;JMP",
+            f"(LESSTHAN{jump_pos})",
+            " @SP",
+            " A=M-1",
+            " M=-1",
+            f" @LTEND{jump_pos}",
+            " 0;JMP",
+            f"(NOTLESSTHAN{jump_pos})",
+            " @SP",
+            " A=M-1",
+            " M=0",
+            f" @LTEND{jump_pos}",
+            " 0;JMP",
+            f"(LTEND{jump_pos})",
+            "0",
+        ]
         self.__write_instructions(instructions)
 
     def close(self):

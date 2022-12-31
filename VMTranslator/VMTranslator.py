@@ -7,9 +7,9 @@ import re
 
 
 if __name__ == "__main__":
-    """usage:- python3 VMTranslator.py <path-to-vm file>
+    """usage:- python3 VMTranslator.py <path-to-vm file/directory>
 
-    Generates a .asm file with same file name in location of .vm file
+    Generates a single .asm file with same file name in location of .vm file or directory name incase that is provided.
     """
     arg_parse = argparse.ArgumentParser()
     arg_parse.add_argument("vm_file", help="Enter path of vm code file", default="")
