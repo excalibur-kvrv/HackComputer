@@ -1,4 +1,4 @@
-from tokens import KeywordType, LexicalElement
+from tokens import KeywordType, LexicalElement, SymbolType
 
 class JackTokenizer:
     def __init__(self, input_file=None):
