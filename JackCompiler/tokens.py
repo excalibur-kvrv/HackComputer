@@ -3,7 +3,7 @@ from enum import Enum
 
 class LexicalElement(Enum):
     KEYWORD = "keyword"
-    IDENTIFIER_ = "identifier"
+    IDENTIFIER = "identifier"
     SYMBOL = "symbol"
     INT_CONST = "integerConstant"
     STRING_CONST = "stringConstant"
