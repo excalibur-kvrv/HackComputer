@@ -1,4 +1,4 @@
-from tokens import KeywordType, LexicalElement, SymbolType
+from tokens import LexicalElement
 from constants import *
 
 
@@ -14,6 +14,7 @@ class JackTokenizer:
         self.current_token = None
         self.current_token_type = None
         self.file_content = file_content
+        self.token_count = 0
     
     def hasMoreTokens(self) -> bool:
         return self.characters_read < len(self.file_content) - 1
@@ -94,6 +95,7 @@ class JackTokenizer:
             else:
                 current_index += 1
                 self.current_token = "".join(string_characters)
+                self.token_count += 1
         
         return current_index
             
@@ -111,12 +113,14 @@ class JackTokenizer:
                 current_index += 1
             else:
                 self.current_token = "".join(digit_characters)
+                self.token_count += 1
         
         return current_index
     
     def __handle_symbol_token(self, index: int) -> int:
         self.current_token_type = LexicalElement.SYMBOL
         self.current_token = self.__get_file_character(index)
+        self.token_count += 1
         return index + 1
     
     def __handle_identifier_keyword_token(self, index: int) -> int:
@@ -134,6 +138,7 @@ class JackTokenizer:
                     self.current_token_type = LexicalElement.KEYWORD
                 else:
                     self.current_token_type = LexicalElement.IDENTIFIER
+                self.token_count += 1
         
         return current_index
     

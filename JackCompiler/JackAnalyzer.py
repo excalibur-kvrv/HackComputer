@@ -37,25 +37,31 @@ if __name__ == "__main__":
     
     for file in files_to_translate:
         path, file_name = os.path.split(file)
-        tokens_file_path = os.path.join(path, file_name.replace(".jack", "t.xml"))
         tokenizer = JackTokenizer(file)
-        with open(tokens_file_path, "w") as tokens_file:
-            tokens_file.write("<tokens>\n")
+        
+        # Use the below code to test if tokens are getting created correctly
+        # tokens_file_path = os.path.join(path, file_name.replace(".jack", "t.xml"))
+        # with open(tokens_file_path, "w") as tokens_file:
+        #     tokens_file.write("<tokens>\n")
             
-            while tokenizer.hasMoreTokens():
-                tokenizer.advance()
-                token_type = tokenizer.tokenType()
-                token_str = ""
-                if token_type == LexicalElement.KEYWORD:
-                    token_str = output_jack_tokens(LexicalElement.KEYWORD.value, tokenizer.keyWord())
-                elif token_type == LexicalElement.SYMBOL:
-                    token_str = output_jack_tokens(LexicalElement.SYMBOL.value, tokenizer.symbol())
-                elif token_type == LexicalElement.IDENTIFIER:
-                    token_str = output_jack_tokens(LexicalElement.IDENTIFIER.value, tokenizer.identifier())
-                elif token_type == LexicalElement.INT_CONST:
-                    token_str = output_jack_tokens(LexicalElement.INT_CONST.value, tokenizer.intVal())
-                elif token_type == LexicalElement.STRING_CONST:
-                    token_str = output_jack_tokens(LexicalElement.STRING_CONST.value, tokenizer.stringVal())
-                tokens_file.write(token_str)
+        #     while tokenizer.hasMoreTokens():
+        #         tokenizer.advance()
+        #         token_type = tokenizer.tokenType()
+        #         token_str = ""
+        #         if token_type == LexicalElement.KEYWORD:
+        #             token_str = output_jack_tokens(LexicalElement.KEYWORD.value, tokenizer.keyWord())
+        #         elif token_type == LexicalElement.SYMBOL:
+        #             token_str = output_jack_tokens(LexicalElement.SYMBOL.value, tokenizer.symbol())
+        #         elif token_type == LexicalElement.IDENTIFIER:
+        #             token_str = output_jack_tokens(LexicalElement.IDENTIFIER.value, tokenizer.identifier())
+        #         elif token_type == LexicalElement.INT_CONST:
+        #             token_str = output_jack_tokens(LexicalElement.INT_CONST.value, tokenizer.intVal())
+        #         elif token_type == LexicalElement.STRING_CONST:
+        #             token_str = output_jack_tokens(LexicalElement.STRING_CONST.value, tokenizer.stringVal())
+        #         tokens_file.write(token_str)
             
-            tokens_file.write("</tokens>\n")
+        #     tokens_file.write("</tokens>\n")
+        tokenizer.advance()
+        output_file = os.path.join(path, file_name.replace(".jack", "C.xml"))
+        compilation_engine = CompilationEngine(tokenizer, output_file)
+        compilation_engine.compileClass()
