@@ -20,9 +20,14 @@ class CompilationEngine:
 
     def __write_token(self, token: str, end=False):
         token_to_write = token
+
         if end:
             token_to_write = f"/{token_to_write}"
+
         self.output_file.write(f"<{token_to_write}>")
+
+        if end:
+            self.output_file.write("\n")
 
     def __handle_or_rule(self, current_token: str, choices: list):
         assert any(choice == current_token for choice in choices) == True
@@ -283,17 +288,23 @@ class CompilationEngine:
         self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
 
         if self.tokenizer.keyWord() == KeywordType.ELSE.value:
-            self.__handle_token_output(self.tokenizer.keyWord(), LexicalElement.KEYWORD.value)
-            self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+            self.__handle_token_output(
+                self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
+            )
+            self.__handle_token_output(
+                self.tokenizer.symbol(), LexicalElement.SYMBOL.value
+            )
             self.compileStatements()
-            self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+            self.__handle_token_output(
+                self.tokenizer.symbol(), LexicalElement.SYMBOL.value
+            )
 
         self.__write_token("ifStatement", True)
 
     def compileWhile(self):
         # rule -> 'while' '(' expression ')' '{' statements '}'
         self.__write_token("whileStatement")
-        
+
         self.__handle_token_output(
             self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
         )
@@ -303,21 +314,136 @@ class CompilationEngine:
         self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
         self.compileStatements()
         self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-        
+
         self.__write_token("whileStatement", True)
+
+    def __handle_subroutine_call(self):
+        # rule -> subroutineName '(' expressionList ')' | (className|varName)'.'subroutineName '(' expressionList ')'
+        if self.tokenizer.symbol() == SymbolType.DOT.value:
+            self.__handle_token_output(
+                self.tokenizer.symbol(), LexicalElement.SYMBOL.value
+            )
+            self.__handle_token_output(
+                self.tokenizer.identifier(), LexicalElement.IDENTIFIER.value
+            )
+
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        self.compileExpressionList()
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
 
     def compileDo(self):
         # rule -> 'do' subroutineCall ';'
-        pass
+        self.__write_token("doStatement")
+        self.__handle_token_output(
+            self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
+        )
+        self.__handle_token_output(
+            self.tokenizer.identifier(), LexicalElement.IDENTIFIER.value
+        )
+        self.__handle_subroutine_call()
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        self.__write_token("doStatement", True)
 
     def compileReturn(self):
-        pass
+        # rule -> 'return' expression? ';'
+        self.__write_token("returnStatement")
+        self.__handle_token_output(
+            self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
+        )
+
+        if self.tokenizer.tokenType() != LexicalElement.SYMBOL:
+            self.compileExpression()
+
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        self.__write_token("returnStatement", True)
 
     def compileExpression(self):
-        pass
+        # rule -> term (op term)*
+        self.__write_token("expression")
+        self.compileTerm()
+
+        while (
+            self.tokenizer.tokenType() == LexicalElement.SYMBOL
+            and self.__handle_or_rule(
+                self.tokenizer.symbol(),
+                [
+                    SymbolType.PLUS.value,
+                    SymbolType.MINUS.value,
+                    SymbolType.SLASH.value,
+                    SymbolType.STAR.value,
+                    SymbolType.AMPERSAND.value,
+                    SymbolType.PIPE.value,
+                    SymbolType.LESS_THAN.value,
+                    SymbolType.GREATER_THAN.value,
+                    SymbolType.EQUAL.value,
+                ],
+            )
+        ):
+            self.__handle_token_output(
+                self.tokenizer.symbol(), LexicalElement.SYMBOL.value
+            )
+            self.compileTerm()
+
+        self.__write_token("expression", True)
 
     def compileTerm(self):
-        pass
+        # rule -> integerConstant | stringConstant | keywordConstant | varName |
+        # varName '[' expression ']' | '(' expression ')' | (unaryOp term) | subroutineCall
+        self.__write_token("term")
+
+        token_type = self.tokenizer.tokenType()
+        if token_type == LexicalElement.INT_CONST:
+            self.__handle_token_output(
+                self.tokenizer.intVal(), LexicalElement.INT_CONST
+            )
+        elif token_type == LexicalElement.STRING_CONST:
+            self.__handle_token_output(
+                self.tokenizer.stringVal(), LexicalElement.STRING_CONST
+            )
+        elif token_type == LexicalElement.KEYWORD:
+            self.__handle_token_output(self.tokenizer.keyWord(), LexicalElement.KEYWORD)
+        elif token_type == LexicalElement.SYMBOL:
+            current_token = self.tokenizer.symbol()
+            if current_token == SymbolType.LEFT_PAREN.value:
+                self.__handle_token_output(current_token, LexicalElement.SYMBOL.value)
+                self.compileExpression()
+                self.__handle_token_output(
+                    self.tokenizer.symbol(), LexicalElement.SYMBOL.value
+                )
+            else:
+                self.__handle_token_output(current_token, LexicalElement.SYMBOL.value)
+                self.compileTerm()
+        elif token_type == LexicalElement.IDENTIFIER:
+            self.__handle_token_output(
+                self.tokenizer.identifier(), LexicalElement.IDENTIFIER.value
+            )
+            if self.tokenizer.symbol() == SymbolType.LEFT_SQ_BRACE.value:
+                self.__handle_token_output(current_token, LexicalElement.SYMBOL.value)
+                self.compileExpression()
+                self.__handle_token_output(
+                    self.tokenizer.symbol(), LexicalElement.SYMBOL.value
+                )
+            elif (
+                self.tokenizer.symbol() == SymbolType.DOT.value
+                or self.tokenizer.symbol() == SymbolType.LEFT_PAREN.value
+            ):
+                self.__handle_subroutine_call()
+
+        self.__write_token("term", True)
 
     def compileExpressionList(self) -> int:
-        pass
+        # rule -> (expression (',' expression)*)?
+        self.__write_token("expressionList")
+        
+        if self.tokenizer.symbol() != SymbolType.RIGHT_PAREN.value:
+            self.compileExpression()
+            while (
+                self.tokenizer.tokenType() == LexicalElement.SYMBOL
+                and self.tokenizer.symbol() == SymbolType.COMMA.value
+            ):
+                self.__handle_token_output(
+                    self.tokenizer.symbol(), LexicalElement.SYMBOL.value
+                )
+                self.compileExpression()
+        
+        self.__write_token("expressionList", True)
