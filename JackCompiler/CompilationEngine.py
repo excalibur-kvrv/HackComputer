@@ -28,6 +28,17 @@ class CompilationEngine:
         assert any(choice == current_token for choice in choices) == True
         return True
 
+    def __handle_type_rule(self):
+        token_type = self.tokenizer.tokenType()
+        if token_type == LexicalElement.KEYWORD:
+            self.__handle_token_output(
+                self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
+            )
+        else:
+            self.__handle_token_output(
+                self.tokenizer.identifier(), LexicalElement.IDENTIFIER.value
+            )
+
     def __handle_token_output(self, token: str, token_type: str):
         self.__write_token(token_type)
         self.output_file.write(f" {token} ")
@@ -126,42 +137,177 @@ class CompilationEngine:
     def compileSubroutine(self):
         # rule -> ('constructor' | 'function' | 'method') ('void' | type) subroutineName
         #         '(' parameterList ')' subroutineBody
-        self.__handle_token_output(self.tokenizer.keyWord(), LexicalElement.KEYWORD.value)
-        token_type = self.tokenizer.tokenType()
-        if token_type == LexicalElement.KEYWORD:
-            self.__handle_token_output(self.tokenizer.keyWord(), LexicalElement.KEYWORD.value)
-        else:
-            self.__handle_token_output(self.tokenizer.identifier(), LexicalElement.IDENTIFIER.value)
-        
-        self.__handle_token_output(self.tokenizer.identifier(), LexicalElement.IDENTIFIER.value)
+        self.__write_token("subroutineDec")
+        self.__handle_token_output(
+            self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
+        )
+        self.__handle_type_rule()
+        self.__handle_token_output(
+            self.tokenizer.identifier(), LexicalElement.IDENTIFIER.value
+        )
         self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
         self.compileParameterList()
         self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
         self.compileSubroutineBody()
+        self.__write_token("subroutineDec", True)
 
     def compileParameterList(self):
         # rule -> ((type varName) (',' type varName)*)?
-        pass
+        self.__write_token("parameterList")
+
+        if self.tokenizer.tokenType() != LexicalElement.SYMBOL:
+            self.__handle_type_rule()
+            self.__handle_token_output(
+                self.tokenizer.identifier(), LexicalElement.IDENTIFIER.value
+            )
+
+            while (
+                self.tokenizer.tokenType() == LexicalElement.SYMBOL
+                and self.tokenizer.symbol() == SymbolType.COMMA.value
+            ):
+                self.__handle_token_output(
+                    self.tokenizer.symbol(), LexicalElement.SYMBOL.value
+                )
+                self.__handle_type_rule()
+                self.__handle_token_output(
+                    self.tokenizer.identifier(), LexicalElement.IDENTIFIER.value
+                )
+
+        self.__write_token("parameterList", True)
 
     def compileSubroutineBody(self):
-        pass
+        # rule -> '{' varDec* statements '}'
+        self.__write_token("subroutineBody")
+
+        while (
+            self.tokenizer.tokenType() == LexicalElement.KEYWORD
+            and self.tokenizer.keyWord() == KeywordType.VAR.value
+        ):
+            self.compileVarDec()
+
+        self.compileStatements()
+        self.__write_token("subroutineBody", True)
 
     def compileVarDec(self):
-        pass
+        # varDec -> 'var' type varName (',' varName)* ';'
+        self.__write_token("varDec")
+        self.__handle_token_output(
+            self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
+        )
+        self.__handle_type_rule()
+        self.__handle_token_output(
+            self.tokenizer.identifier(), LexicalElement.IDENTIFIER.value
+        )
+
+        while (
+            self.tokenizer.tokenType() == LexicalElement.SYMBOL
+            and self.tokenizer.symbol() == SymbolType.COMMA.value
+        ):
+            self.__handle_token_output(
+                self.tokenizer.symbol(), LexicalElement.SYMBOL.value
+            )
+            self.__handle_token_output(
+                self.tokenizer.identifier(), LexicalElement.IDENTIFIER.value
+            )
+
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        self.__write_token("varDec", True)
 
     def compileStatements(self):
-        pass
+        # rule -> statement*
+        # statement -> letStatement | ifStatement | whileStatement | doStatement | returnStatement
+        self.__write_token("statements")
+
+        while (
+            self.tokenizer.tokenType() == LexicalElement.KEYWORD
+            and self.__handle_or_rule(
+                self.tokenizer.keyWord(),
+                [
+                    KeywordType.LET.value,
+                    KeywordType.IF.value,
+                    KeywordType.WHILE.value,
+                    KeywordType.DO.value,
+                    KeywordType.RETURN.value,
+                ],
+            )
+        ):
+            current_token = self.tokenizer.keyWord()
+            if current_token == KeywordType.LET.value:
+                self.compileLet()
+            elif current_token == KeywordType.IF.value:
+                self.compileIf()
+            elif current_token == KeywordType.WHILE.value:
+                self.compileWhile()
+            elif current_token == KeywordType.DO.value:
+                self.compileDo()
+            elif current_token == KeywordType.RETURN.value:
+                self.compileReturn()
+
+        self.__write_token("statements", True)
 
     def compileLet(self):
-        pass
+        # rule -> 'let' varName ('[' expression, ']')? = expression ';'
+        self.__write_token("letStatement")
+        self.__handle_token_output(
+            self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
+        )
+        self.__handle_token_output(
+            self.tokenizer.identifier(), LexicalElement.IDENTIFIER.value
+        )
+
+        if self.tokenizer.symbol() == SymbolType.LEFT_SQ_BRACE.value:
+            self.__handle_token_output(
+                self.tokenizer.symbol(), LexicalElement.SYMBOL.value
+            )
+            self.compileExpression()
+            self.__handle_token_output(
+                self.tokenizer.symbol(), LexicalElement.SYMBOL.value
+            )
+
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        self.compileExpression()
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        self.__write_token("letStatement", True)
 
     def compileIf(self):
-        pass
+        # rule -> 'if' '(' expression ')' '{' statements '}' ('else' '{' statements '}')?
+        self.__write_token("ifStatement")
+        self.__handle_token_output(
+            self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
+        )
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        self.compileExpression()
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        self.compileStatements()
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+
+        if self.tokenizer.keyWord() == KeywordType.ELSE.value:
+            self.__handle_token_output(self.tokenizer.keyWord(), LexicalElement.KEYWORD.value)
+            self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+            self.compileStatements()
+            self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+
+        self.__write_token("ifStatement", True)
 
     def compileWhile(self):
-        pass
+        # rule -> 'while' '(' expression ')' '{' statements '}'
+        self.__write_token("whileStatement")
+        
+        self.__handle_token_output(
+            self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
+        )
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        self.compileExpression()
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        self.compileStatements()
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        
+        self.__write_token("whileStatement", True)
 
     def compileDo(self):
+        # rule -> 'do' subroutineCall ';'
         pass
 
     def compileReturn(self):

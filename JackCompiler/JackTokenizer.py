@@ -146,17 +146,22 @@ class JackTokenizer:
         return self.current_token_type
     
     def keyWord(self) -> str:
-        return self.current_token
+        if self.tokenType() == LexicalElement.KEYWORD:
+            return self.current_token
     
     def symbol(self) -> str:
-        return "".join(SPECIAL_MAPPINGS[c] if c in SPECIAL_MAPPINGS else c for c in self.current_token)
+        if self.tokenType() == LexicalElement.SYMBOL:
+            return "".join(SPECIAL_MAPPINGS[c] if c in SPECIAL_MAPPINGS else c for c in self.current_token)
     
     def identifier(self) -> str:
-        return self.current_token
+        if self.tokenType() == LexicalElement.IDENTIFIER:
+            return self.current_token
     
     def intVal(self) -> int:
-        return int(self.current_token)
+        if self.tokenType() == LexicalElement.INT_CONST:
+            return int(self.current_token)
     
     def stringVal(self) -> str:
-        return "".join(SPECIAL_MAPPINGS[c] if c in SPECIAL_MAPPINGS else c for c in self.current_token)
+        if self.tokenType() == LexicalElement.STRING_CONST:
+            return "".join(SPECIAL_MAPPINGS[c] if c in SPECIAL_MAPPINGS else c for c in self.current_token)
 
