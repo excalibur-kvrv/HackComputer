@@ -1,3 +1,4 @@
+from typing import Union
 from JackTokenizer import JackTokenizer
 from tokens import LexicalElement, SymbolType, KeywordType
 
@@ -10,16 +11,20 @@ class CompilationEngine:
     def __close_file(self):
         self.output_file.close()
 
-    def __check_token(self, actual_token, expected_token):
+    def __check_token(
+        self,
+        actual_token: str,
+        expected_token: Union[LexicalElement, SymbolType, KeywordType],
+    ):
         assert actual_token == expected_token.value
 
-    def __write_token(self, token, end=False):
+    def __write_token(self, token: str, end=False):
         token_to_write = token
         if end:
             token_to_write = f"/{token_to_write}"
         self.output_file.write(f"<{token_to_write}>")
 
-    def __handle_or_rule(self, current_token, choices):
+    def __handle_or_rule(self, current_token: str, choices: list):
         assert any(choice == current_token for choice in choices) == True
         return True
 
@@ -119,11 +124,23 @@ class CompilationEngine:
         self.__write_token("classVarDec", True)
 
     def compileSubroutine(self):
-        # rule -> ('constructor' | 'function' | 'method') ('void' | type) subroutineName 
+        # rule -> ('constructor' | 'function' | 'method') ('void' | type) subroutineName
         #         '(' parameterList ')' subroutineBody
-        pass
+        self.__handle_token_output(self.tokenizer.keyWord(), LexicalElement.KEYWORD.value)
+        token_type = self.tokenizer.tokenType()
+        if token_type == LexicalElement.KEYWORD:
+            self.__handle_token_output(self.tokenizer.keyWord(), LexicalElement.KEYWORD.value)
+        else:
+            self.__handle_token_output(self.tokenizer.identifier(), LexicalElement.IDENTIFIER.value)
+        
+        self.__handle_token_output(self.tokenizer.identifier(), LexicalElement.IDENTIFIER.value)
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        self.compileParameterList()
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        self.compileSubroutineBody()
 
     def compileParameterList(self):
+        # rule -> ((type varName) (',' type varName)*)?
         pass
 
     def compileSubroutineBody(self):
