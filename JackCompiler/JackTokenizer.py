@@ -24,27 +24,34 @@ class JackTokenizer:
         self.current_token_type = None
         
         if self.hasMoreTokens():
-            current_index = self.characters_read
-            current_character = self.file_content[current_index]
+            can_break = False
             
-            if current_character == "\n":
-                current_index = self.__handle_single_comment(current_index)
-            elif current_character == " ":
-                current_index = self.__handle_whitespace(current_index + 1)
-            elif current_character == "/" and self.__get_file_character(current_index + 1) == "/":
-                current_index = self.__handle_single_comment(current_index + 2)
-            elif current_character == "/" and self.__get_file_character(current_index + 1) == "*":
-                current_index = self.__handle_multiline_comment(current_index + 2)
-            elif current_character == '"':
-                current_index = self.__handle_string_token(current_index + 1)
-            elif current_character.isdigit():
-                current_index = self.__handle_int_token(current_index)
-            elif current_character in SYMBOLS:
-                current_index = self.__handle_symbol_token(current_index)
-            else:
-                current_index = self.__handle_identifier_keyword_token(current_index)
+            while not can_break and self.hasMoreTokens():            
+                current_index = self.characters_read
+                current_character = self.file_content[current_index]
             
-            self.characters_read = current_index
+                if current_character == "\n":
+                    current_index = self.__handle_single_comment(current_index)
+                elif current_character == " " or current_character == "\t":
+                    current_index = self.__handle_whitespace(current_index + 1)
+                elif current_character == "/" and self.__get_file_character(current_index + 1) == "/":
+                    current_index = self.__handle_single_comment(current_index + 2)
+                elif current_character == "/" and self.__get_file_character(current_index + 1) == "*":
+                    current_index = self.__handle_multiline_comment(current_index + 2)
+                elif current_character == '"':
+                    current_index = self.__handle_string_token(current_index + 1)
+                    can_break = True
+                elif current_character.isdigit():
+                    current_index = self.__handle_int_token(current_index)
+                    can_break = True
+                elif current_character in SYMBOLS:
+                    current_index = self.__handle_symbol_token(current_index)
+                    can_break = True
+                else:
+                    current_index = self.__handle_identifier_keyword_token(current_index)
+                    can_break = True
+                
+                self.characters_read = current_index
     
     def __get_file_character(self, index: int) -> str:
         if self.hasMoreTokens():
@@ -55,7 +62,7 @@ class JackTokenizer:
         current_index = index
         current_char = self.__get_file_character(current_index)
         
-        while current_char == " ":
+        while current_char == " " or current_char == "\t":
             current_index += 1
             current_char = self.__get_file_character(current_index)
         
