@@ -34,16 +34,16 @@ if __name__ == "__main__":
 
     if not os.path.exists(jack_file) or not len(files_to_translate):
         raise ValueError("Enter a valid jack file path or directory")
-    
+
     for file in files_to_translate:
         path, file_name = os.path.split(file)
         tokenizer = JackTokenizer(file)
-        
+
         # Use the below code to test if tokens are getting created correctly
         # tokens_file_path = os.path.join(path, file_name.replace(".jack", "t.xml"))
         # with open(tokens_file_path, "w") as tokens_file:
         #     tokens_file.write("<tokens>\n")
-            
+
         #     while tokenizer.hasMoreTokens():
         #         tokenizer.advance()
         #         token_type = tokenizer.tokenType()
@@ -59,9 +59,9 @@ if __name__ == "__main__":
         #         elif token_type == LexicalElement.STRING_CONST:
         #             token_str = output_jack_tokens(LexicalElement.STRING_CONST.value, tokenizer.stringVal())
         #         tokens_file.write(token_str)
-            
+
         #     tokens_file.write("</tokens>\n")
         tokenizer.advance()
-        output_file = os.path.join(path, file_name.replace(".jack", "C.xml"))
+        output_file = os.path.join(path, file_name.replace(".jack", ".xml"))
         compilation_engine = CompilationEngine(tokenizer, output_file)
         compilation_engine.compileClass()
