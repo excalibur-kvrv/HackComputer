@@ -372,6 +372,7 @@ class CompilationEngine:
 
     def compileExpression(self):
         # rule -> term (op term)*
+        # op -> '+' | '-' | '*' | '/' | '&' | '|' | '<' | '>' | '='
         self.__write_token("expression")
         self.output_file.write("\n")
         self.compileTerm()
@@ -403,8 +404,9 @@ class CompilationEngine:
     def compileTerm(self):
         # rule -> integerConstant | stringConstant | keywordConstant | varName |
         # varName '[' expression ']' | '(' expression ')' | (unaryOp term) | subroutineCall
+        # unaryOp -> '-' | '~'
+        # keywordConstant -> 'true' | 'false' | 'null' | 'this'
         self.__write_token("term")
-        
         self.output_file.write("\n")
 
         token_type = self.tokenizer.tokenType()
@@ -450,7 +452,6 @@ class CompilationEngine:
     def compileExpressionList(self) -> int:
         # rule -> (expression (',' expression)*)?
         self.__write_token("expressionList")
-        
         self.output_file.write("\n")
         
         if self.tokenizer.symbol() != SymbolType.RIGHT_PAREN.value:
