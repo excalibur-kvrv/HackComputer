@@ -1,3 +1,5 @@
+# This file is deprecated after code generation capabilities are created to emit vm code instead of xml code
+
 from CompilationEngine import CompilationEngine
 from JackTokenizer import JackTokenizer
 from tokens import LexicalElement
