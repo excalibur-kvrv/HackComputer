@@ -16,6 +16,6 @@ Constuction of the computer is divided into two parts:-
 
 ## The Software System contains the below implementations:-
 
-1. A compiler for the jack programming language which runs on the 16-bit Hack computer.  
-2. JackOS containing key algorithms and libraries for memory management, mathematical opeerations, etc.
+1. A two tier compiler for the jack programming language which runs on the 16-bit Hack computer.  
+2. JackOS containing key algorithms and libraries for memory management, mathematical operations, etc.
 3. A Tetris game written in jack that runs on top of the Hack computer.
