@@ -1,13 +1,14 @@
 from typing import Union
 from JackTokenizer import JackTokenizer
 from SymbolTable import SymbolTable
+from VMWriter import VMWriter
 from tokens import LexicalElement, SymbolType, KeywordType
 from vmtokens import VariableType, VirtualMemorySegmentType
 from constants import *
 
 
 class CompilationEngine:
-    def __init__(self, tokenizer: JackTokenizer = None, output_file: str = None):
+    def __init__(self, tokenizer: JackTokenizer = None, output_file: VMWriter = None):
         self.tokenizer = tokenizer
         self.output_file = open(output_file, "w")
         self.indents = [0]
@@ -39,21 +40,19 @@ class CompilationEngine:
 
     def __handle_or_rule(self, current_token: str, choices: list):
         return any(choice == current_token for choice in choices) == True
-    
+
     def __handle_type_rule(self) -> str:
         token_type = None
-        
+
         if self.tokenizer.tokenType() == LexicalElement.KEYWORD:
             token_type = self.tokenizer.keyWord()
-            self.__handle_token_output(
-                token_type, LexicalElement.KEYWORD.value
-            )
+            self.__handle_token_output(token_type, LexicalElement.KEYWORD.value)
         else:
             token_type = self.tokenizer.identifier()
             self.__handle_identifier(token_type, "used")
-        
+
         return token_type
-    
+
     def __handle_identifier(self, name: str, usage: str):
         self.indents.append(self.indents[-1] + 1)
         self.__write_token("identifier", insert_newline=True)
@@ -77,7 +76,7 @@ class CompilationEngine:
         self.output_file.write(f" {token} ")
         self.__write_token(token_type, True)
         self.indents.pop()
-        
+
         if advance:
             self.tokenizer.advance()
 
@@ -86,11 +85,11 @@ class CompilationEngine:
         self.__check_token(self.tokenizer.keyWord(), KeywordType.CLASS)
         self.__write_token(KeywordType.CLASS.value, insert_newline=True)
         self.indents.append(self.indents[-1] + 1)
-        self.__handle_token_output(self.tokenizer.keyWord(), LexicalElement.KEYWORD.value)
-        self.class_name = self.tokenizer.identifier()
-        self.__handle_identifier(
-            self.tokenizer.identifier(), "declared"
+        self.__handle_token_output(
+            self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
         )
+        self.class_name = self.tokenizer.identifier()
+        self.__handle_identifier(self.tokenizer.identifier(), "declared")
 
         self.__check_token(self.tokenizer.symbol(), SymbolType.LEFT_BRACE)
         self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
@@ -127,7 +126,7 @@ class CompilationEngine:
         # rule -> ('static'|'field') type varName (',' varName)* ';'
         self.indents.append(self.indents[-1] + 1)
         self.__write_token("classVarDec", insert_newline=True)
-        
+
         current_token = self.tokenizer.keyWord()
         token_kind = current_token
         self.__handle_token_output(
@@ -137,9 +136,7 @@ class CompilationEngine:
         token_type = self.__handle_type_rule()
 
         self.symbol_table.define(self.tokenizer.identifier(), token_type, token_kind)
-        self.__handle_identifier(
-            self.tokenizer.identifier(), "declared"
-        )
+        self.__handle_identifier(self.tokenizer.identifier(), "declared")
 
         while (
             self.tokenizer.tokenType() == LexicalElement.SYMBOL
@@ -148,10 +145,10 @@ class CompilationEngine:
             self.__handle_token_output(
                 self.tokenizer.symbol(), LexicalElement.SYMBOL.value
             )
-            self.symbol_table.define(self.tokenizer.identifier(), token_type, token_kind)
-            self.__handle_identifier(
-                self.tokenizer.identifier(), "declared"
+            self.symbol_table.define(
+                self.tokenizer.identifier(), token_type, token_kind
             )
+            self.__handle_identifier(self.tokenizer.identifier(), "declared")
 
         self.__check_token(self.tokenizer.symbol(), SymbolType.SEMI_COLON)
         self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
@@ -169,9 +166,7 @@ class CompilationEngine:
             self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
         )
         self.__handle_type_rule()
-        self.__handle_identifier(
-            self.tokenizer.identifier(), "declared"
-        )
+        self.__handle_identifier(self.tokenizer.identifier(), "declared")
         self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
         self.compileParameterList()
         self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
@@ -186,10 +181,10 @@ class CompilationEngine:
 
         if self.tokenizer.tokenType() != LexicalElement.SYMBOL:
             token_type = self.__handle_type_rule()
-            self.symbol_table.define(self.tokenizer.identifier(), token_type, VariableType.ARG.value)
-            self.__handle_identifier(
-                self.tokenizer.identifier(), "declared"
+            self.symbol_table.define(
+                self.tokenizer.identifier(), token_type, VariableType.ARG.value
             )
+            self.__handle_identifier(self.tokenizer.identifier(), "declared")
 
             while (
                 self.tokenizer.tokenType() == LexicalElement.SYMBOL
@@ -199,10 +194,10 @@ class CompilationEngine:
                     self.tokenizer.symbol(), LexicalElement.SYMBOL.value
                 )
                 token_type = self.__handle_type_rule()
-                self.symbol_table.define(self.tokenizer.identifier(), token_type, VariableType.ARG.value)
-                self.__handle_identifier(
-                    self.tokenizer.identifier(), "declared"
+                self.symbol_table.define(
+                    self.tokenizer.identifier(), token_type, VariableType.ARG.value
                 )
+                self.__handle_identifier(self.tokenizer.identifier(), "declared")
 
         self.__write_token("parameterList", True, True)
         self.indents.pop()
@@ -212,10 +207,8 @@ class CompilationEngine:
         self.indents.append(self.indents[-1] + 1)
         self.__write_token("subroutineBody", insert_newline=True)
 
-        self.__handle_token_output(
-            self.tokenizer.symbol(), LexicalElement.SYMBOL.value
-        )
-        
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+
         while (
             self.tokenizer.tokenType() == LexicalElement.KEYWORD
             and self.tokenizer.keyWord() == KeywordType.VAR.value
@@ -223,9 +216,7 @@ class CompilationEngine:
             self.compileVarDec()
 
         self.compileStatements()
-        self.__handle_token_output(
-            self.tokenizer.symbol(), LexicalElement.SYMBOL.value
-        )
+        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
         self.__write_token("subroutineBody", True, True)
         self.indents.pop()
 
@@ -238,7 +229,11 @@ class CompilationEngine:
             self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
         )
         token_type = self.__handle_type_rule()
-        self.symbol_table.define(self.tokenizer.identifier(), token_type, VirtualMemorySegmentType.LOCAL.value)
+        self.symbol_table.define(
+            self.tokenizer.identifier(),
+            token_type,
+            VirtualMemorySegmentType.LOCAL.value,
+        )
         self.__handle_identifier(self.tokenizer.identifier(), "declared")
 
         while (
@@ -248,7 +243,11 @@ class CompilationEngine:
             self.__handle_token_output(
                 self.tokenizer.symbol(), LexicalElement.SYMBOL.value
             )
-            self.symbol_table.define(self.tokenizer.identifier(), token_type, VirtualMemorySegmentType.LOCAL.value)
+            self.symbol_table.define(
+                self.tokenizer.identifier(),
+                token_type,
+                VirtualMemorySegmentType.LOCAL.value,
+            )
             self.__handle_identifier(self.tokenizer.identifier(), "declared")
 
         self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
@@ -260,7 +259,7 @@ class CompilationEngine:
         # statement -> letStatement | ifStatement | whileStatement | doStatement | returnStatement
         self.indents.append(self.indents[-1] + 1)
         self.__write_token("statements", insert_newline=True)
-        
+
         while (
             self.tokenizer.tokenType() == LexicalElement.KEYWORD
             and self.__handle_or_rule(
@@ -293,7 +292,7 @@ class CompilationEngine:
         # rule -> 'let' varName ('[' expression, ']')? = expression ';'
         self.indents.append(self.indents[-1] + 1)
         self.__write_token("letStatement", insert_newline=True)
-        
+
         self.__handle_token_output(
             self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
         )
@@ -454,7 +453,9 @@ class CompilationEngine:
                 self.tokenizer.stringVal(), LexicalElement.STRING_CONST.value
             )
         elif token_type == LexicalElement.KEYWORD:
-            self.__handle_token_output(self.tokenizer.keyWord(), LexicalElement.KEYWORD.value)
+            self.__handle_token_output(
+                self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
+            )
         elif token_type == LexicalElement.SYMBOL:
             current_token = self.tokenizer.symbol()
             if current_token == SymbolType.LEFT_PAREN.value:
@@ -469,7 +470,9 @@ class CompilationEngine:
         elif token_type == LexicalElement.IDENTIFIER:
             self.__handle_identifier(self.tokenizer.identifier(), "used")
             if self.tokenizer.symbol() == SymbolType.LEFT_SQ_BRACE.value:
-                self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+                self.__handle_token_output(
+                    self.tokenizer.symbol(), LexicalElement.SYMBOL.value
+                )
                 self.compileExpression()
                 self.__handle_token_output(
                     self.tokenizer.symbol(), LexicalElement.SYMBOL.value
@@ -487,7 +490,7 @@ class CompilationEngine:
         # rule -> (expression (',' expression)*)?
         self.indents.append(self.indents[-1] + 1)
         self.__write_token("expressionList", insert_newline=True)
-        
+
         if self.tokenizer.symbol() != SymbolType.RIGHT_PAREN.value:
             self.compileExpression()
             while (
