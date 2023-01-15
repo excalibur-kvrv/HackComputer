@@ -17,7 +17,7 @@ class SymbolTable:
         self.subroutine_level = {}
     
     def define(self, name: str, type: str, kind: VariableType):
-        if kind == VariableType.STATIC or kind == VariableType.FIELD:
+        if kind == VariableType.STATIC.value or kind == VariableType.FIELD.value:
             self.class_level[name] = { "type": type, "kind": kind, "index": self.var_count[kind] }
         else:
             self.subroutine_level[name] = { "type": type, "kind": kind, "index": self.var_count[kind] }
@@ -31,7 +31,7 @@ class SymbolTable:
             return self.subroutine_level[name][prop]
         elif name in self.class_level:
             return self.class_level[name][prop]
-        return VariableType.NONE
+        return VariableType.NONE.value
     
     def kindOf(self, name: str) -> VariableType:
         return self.__get_property(name, "kind")
