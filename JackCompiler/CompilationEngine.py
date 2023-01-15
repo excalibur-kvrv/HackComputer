@@ -1,5 +1,6 @@
 from typing import Union
 from JackTokenizer import JackTokenizer
+from SymbolTable import SymbolTable
 from tokens import LexicalElement, SymbolType, KeywordType
 from constants import *
 
@@ -9,6 +10,7 @@ class CompilationEngine:
         self.tokenizer = tokenizer
         self.output_file = open(output_file, "w")
         self.indents = [0]
+        self.symbol_table = SymbolTable()
 
     def __close_file(self):
         self.output_file.close()
