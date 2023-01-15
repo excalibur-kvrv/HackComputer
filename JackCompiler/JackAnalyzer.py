@@ -64,6 +64,6 @@ if __name__ == "__main__":
 
         #     tokens_file.write("</tokens>\n")
         tokenizer.advance()
-        output_file = os.path.join(path, file_name.replace(".jack", ".xml"))
+        output_file = os.path.join(path, file_name.replace(".jack", "C.xml"))
         compilation_engine = CompilationEngine(tokenizer, output_file)
         compilation_engine.compileClass()
