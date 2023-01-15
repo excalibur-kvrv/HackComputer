@@ -1,4 +1,6 @@
+###################### DEPRECATED - DO NOT USE ############################
 # This file is deprecated after code generation capabilities are created to emit vm code instead of xml code
+# use the JackCompiler instead
 
 from CompilationEngine import CompilationEngine
 from JackTokenizer import JackTokenizer

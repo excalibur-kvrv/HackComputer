@@ -8,9 +8,9 @@ from constants import *
 
 
 class CompilationEngine:
-    def __init__(self, tokenizer: JackTokenizer = None, output_file: VMWriter = None):
+    def __init__(self, tokenizer: JackTokenizer = None, vm_writer: VMWriter = None):
         self.tokenizer = tokenizer
-        self.output_file = open(output_file, "w")
+        self.output_file = open(vm_writer, "w")
         self.indents = [0]
         self.symbol_table = SymbolTable()
         self.class_name = None
@@ -23,7 +23,9 @@ class CompilationEngine:
         actual_token: str,
         expected_token: Union[LexicalElement, SymbolType, KeywordType],
     ):
-        assert actual_token == expected_token.value
+        assert (
+            actual_token == expected_token.value
+        ), f"Expected {expected_token.value} but found {actual_token}"
 
     def __write_token(self, token: str, end=False, auto=False, insert_newline=False):
         token_to_write = token
