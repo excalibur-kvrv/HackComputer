@@ -3,7 +3,7 @@ from JackTokenizer import JackTokenizer
 from SymbolTable import SymbolTable
 from VMWriter import VMWriter
 from tokens import LexicalElement, SymbolType, KeywordType
-from vmtokens import VariableType, VirtualMemorySegmentType
+from vmtokens import VariableType, VirtualMemorySegmentType, CommandType
 from constants import *
 
 
@@ -13,6 +13,9 @@ class CompilationEngine:
         self.vm_writer = vm_writer
         self.symbol_table = SymbolTable()
         self.class_name = None
+        self.subroutine_name = None
+        self.subroutine_type = None
+        self.running_index = 0
 
     def __check_token(
         self,
@@ -233,9 +236,11 @@ class CompilationEngine:
 
     def compileVarDec(self):
         # varDec -> 'var' type varName (',' varName)* ';'
-        self.__check_token(self.tokenizer.keyWord(), KeywordType.VAR) # Consume 'var' token
-        token_type = self.__handle_type_rule() # Consume 'type' token
-        self.symbol_table.define( # Consume varName
+        self.__check_token(
+            self.tokenizer.keyWord(), KeywordType.VAR
+        )  # Consume 'var' token
+        token_type = self.__handle_type_rule()  # Consume 'type' token
+        self.symbol_table.define(  # Consume varName
             self.tokenizer.identifier(),
             token_type,
             VirtualMemorySegmentType.LOCAL.value,
@@ -247,15 +252,17 @@ class CompilationEngine:
             self.tokenizer.tokenType() == LexicalElement.SYMBOL
             and self.tokenizer.symbol() == SymbolType.COMMA.value
         ):
-            self.tokenizer.advance() # Consume ',' token
-            self.symbol_table.define( # Consume varName token
+            self.tokenizer.advance()  # Consume ',' token
+            self.symbol_table.define(  # Consume varName token
                 self.tokenizer.identifier(),
                 token_type,
                 VirtualMemorySegmentType.LOCAL.value,
             )
             self.tokenizer.advance()
 
-        self.__check_token(self.tokenizer.symbol(), SymbolType.SEMI_COLON) # Consume ';' token
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.SEMI_COLON
+        )  # Consume ';' token
 
     def compileStatements(self):
         # rule -> statement*
@@ -285,111 +292,192 @@ class CompilationEngine:
             elif current_token == KeywordType.RETURN.value:
                 self.compileReturn()
 
-        
     def compileLet(self):
         # rule -> 'let' varName ('[' expression, ']')? = expression ';'
-        self.__write_token("letStatement", insert_newline=True)
+        self.__check_token(
+            self.tokenizer.keyWord(), KeywordType.LET
+        )  # Consume 'let' token
+        var_name = self.tokenizer.identifier()  # Consume varName token
+        self.tokenizer.advance()
 
-        self.__handle_token_output(
-            self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
-        )
-        self.__handle_identifier(self.tokenizer.identifier(), "used")
+        is_array = False
 
         if self.tokenizer.symbol() == SymbolType.LEFT_SQ_BRACE.value:
-            self.__handle_token_output(
-                self.tokenizer.symbol(), LexicalElement.SYMBOL.value
+            is_array = True
+            self.vm_writer.writePush(
+                self.symbol_table.kindOf(var_name), self.symbol_table.indexOf(var_name)
             )
-            self.compileExpression()
-            self.__handle_token_output(
-                self.tokenizer.symbol(), LexicalElement.SYMBOL.value
+            self.__check_token(
+                self.tokenizer.symbol(), SymbolType.LEFT_SQ_BRACE
+            )  # Consume '[' token
+            self.compileExpression()  # Consume expression
+            self.__check_token(
+                self.tokenizer.symbol(), SymbolType.RIGHT_SQ_BRACE
+            )  # Consume ']' token
+            self.vm_writer.writeArithmetic(CommandType.ADD)
+
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.EQUAL
+        )  # Consume '=' token
+        self.compileExpression()  # Consume expression
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.SEMI_COLON
+        )  # Consume ';' token
+
+        if is_array:
+            self.vm_writer.writePop(VirtualMemorySegmentType.TEMP, 0)
+            self.vm_writer.writePop(VirtualMemorySegmentType.POINTER, 1)
+            self.vm_writer.writePush(VirtualMemorySegmentType.TEMP, 0)
+            self.vm_writer.writePop(VirtualMemorySegmentType.THAT, 0)
+        else:
+            self.vm_writer.writePop(
+                self.symbol_table.kindOf(var_name), self.symbol_table.indexOf(var_name)
             )
 
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-        self.compileExpression()
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-        self.__write_token("letStatement", True, True)
+    def __get_label(self):
+        label = f"{self.class_name}.{self.subroutine_name}.{self.running_index}"
+        self.running_index += 1
+        return label
 
     def compileIf(self):
         # rule -> 'if' '(' expression ')' '{' statements '}' ('else' '{' statements '}')?
-        self.__write_token("ifStatement", insert_newline=True)
+        self.__check_token(
+            self.tokenizer.keyWord(), KeywordType.IF
+        )  # Consume 'if' token
 
-        self.__handle_token_output(
-            self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
-        )
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-        self.compileExpression()
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-        self.compileStatements()
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.LEFT_PAREN
+        )  # Consume '(' token
+        self.compileExpression()  # Consume expression
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.RIGHT_PAREN
+        )  # Consume ')' token
 
+        if_label_end = self.__get_label()
+        else_label = self.__get_label()
+        self.vm_writer.writeArithmetic(CommandType.NOT)
+        self.vm_writer.writeIf(else_label)
+
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.LEFT_BRACE
+        )  # Consume '{'
+        self.compileStatements()  # Consume statements
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.RIGHT_BRACE
+        )  # Consume '}'
+
+        self.vm_writer.writeGoto(if_label_end)
+        self.vm_writer.writeLabel(else_label)
+
+        # Consume ('else' '{' statements '}')?
         if self.tokenizer.keyWord() == KeywordType.ELSE.value:
-            self.__handle_token_output(
-                self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
-            )
-            self.__handle_token_output(
-                self.tokenizer.symbol(), LexicalElement.SYMBOL.value
-            )
-            self.compileStatements()
-            self.__handle_token_output(
-                self.tokenizer.symbol(), LexicalElement.SYMBOL.value
-            )
+            self.__check_token(
+                self.tokenizer.keyWord(), KeywordType.ELSE
+            )  # Consume 'else' token
 
-        self.__write_token("ifStatement", True, True)
+            self.__check_token(
+                self.tokenizer.symbol(), SymbolType.LEFT_BRACE
+            )  # Consume '{' token
+            self.compileStatements()  # Consume statements
+            self.__check_token(
+                self.tokenizer.symbol(), SymbolType.RIGHT_BRACE
+            )  # Consume '}' token
+
+        self.vm_writer.writeLabel(if_label_end)
 
     def compileWhile(self):
         # rule -> 'while' '(' expression ')' '{' statements '}'
-        self.__write_token("whileStatement", insert_newline=True)
+        self.__check_token(
+            self.tokenizer.keyWord(), KeywordType.WHILE
+        )  # Consume 'while' token
 
-        self.__handle_token_output(
-            self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
-        )
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-        self.compileExpression()
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-        self.compileStatements()
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        loop_label = self.__get_label()
+        loop_label_end = self.__get_label()
+        self.vm_writer.writeLabel(loop_label)
 
-        self.__write_token("whileStatement", True, True)
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.LEFT_PAREN
+        )  # Consume '(' token
+        self.compileExpression()  # Consume expression
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.RIGHT_PAREN
+        )  # Consume ')' token
 
-    def __handle_subroutine_call(self):
+        self.vm_writer.writeArithmetic(CommandType.NOT)
+        self.vm_writer.writeIf(loop_label_end)
+
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.LEFT_BRACE
+        )  # Consume '{' token
+        self.compileStatements()  # Consume statements
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.RIGHT_BRACE
+        )  # Consume '}' token
+
+        self.vm_writer.writeGoto(loop_label)
+        self.vm_writer.writeLabel(loop_label_end)
+
+    def __handle_subroutine_call(self, identifier: str):
         # rule -> subroutineName '(' expressionList ')' | (className|varName)'.'subroutineName '(' expressionList ')'
-        if self.tokenizer.symbol() == SymbolType.DOT.value:
-            self.__handle_token_output(
-                self.tokenizer.symbol(), LexicalElement.SYMBOL.value
-            )
-            self.__handle_identifier(self.tokenizer.identifier(), "used")
+        subroutine_name = identifier
+        expression_count = 0
 
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-        self.compileExpressionList()
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        if self.tokenizer.symbol() == SymbolType.DOT.value:
+            self.__check_token(
+                self.tokenizer.symbol(), SymbolType.DOT
+            )  # Consume '.' token
+            current_token = self.tokenizer.identifier()
+
+            if current_token[0].isupper():
+                self.vm_writer.writePush(
+                    self.symbol_table.kindOf(current_token),
+                    self.symbol_table.indexOf(current_token),
+                )
+                expression_count = 1
+
+            subroutine_name = (
+                f"{identifier}.{current_token}"  # Consume subroutine token
+            )
+            self.tokenizer.advance()
+
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.LEFT_PAREN
+        )  # Consume '(' token
+        expression_count += self.compileExpressionList()  # Consume expressionList
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.RIGHT_PAREN
+        )  # Consume ')' token
+
+        self.vm_writer.writeCall(subroutine_name, expression_count)
 
     def compileDo(self):
         # rule -> 'do' subroutineCall ';'
-        self.__write_token("doStatement", insert_newline=True)
+        self.__check_token(
+            self.tokenizer.keyWord(), KeywordType.DO
+        )  # Consume 'do' token
 
-        self.__handle_token_output(
-            self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
-        )
-        self.__handle_identifier(self.tokenizer.identifier(), "used")
-        self.__handle_subroutine_call()
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-        self.__write_token("doStatement", True, True)
+        subroutine_name = self.tokenizer.identifier()  # Consume subroutine name
+        self.tokenizer.advance()
+
+        self.__handle_subroutine_call(subroutine_name)
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.SEMI_COLON
+        )  # Consume ';' token
+        self.vm_writer.writePop(VirtualMemorySegmentType.TEMP, 0)
 
     def compileReturn(self):
         # rule -> 'return' expression? ';'
-        self.__write_token("returnStatement", insert_newline=True)
-
-        self.__handle_token_output(
-            self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
-        )
+        self.__check_token(
+            self.tokenizer.keyWord(), KeywordType.RETURN
+        )  # Consume 'return' token
 
         if self.tokenizer.tokenType() != LexicalElement.SYMBOL:
-            self.compileExpression()
+            self.compileExpression()  # Consume expression
 
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-        self.__write_token("returnStatement", True, True)
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.SEMI_COLON
+        )  # Consume ';' token
+        self.vm_writer.writeReturn()
 
     def compileExpression(self):
         # rule -> term (op term)*
@@ -472,17 +560,18 @@ class CompilationEngine:
 
     def compileExpressionList(self) -> int:
         # rule -> (expression (',' expression)*)?
-        self.__write_token("expressionList", insert_newline=True)
+        expression_count = 0
 
         if self.tokenizer.symbol() != SymbolType.RIGHT_PAREN.value:
             self.compileExpression()
+            expression_count += 1
+
             while (
                 self.tokenizer.tokenType() == LexicalElement.SYMBOL
                 and self.tokenizer.symbol() == SymbolType.COMMA.value
             ):
-                self.__handle_token_output(
-                    self.tokenizer.symbol(), LexicalElement.SYMBOL.value
-                )
+                self.__check_token(self.tokenizer.symbol(), SymbolType.COMMA)
                 self.compileExpression()
+                expression_count += 1
 
-        self.__write_token("expressionList", True, True)
+        return expression_count

@@ -278,7 +278,7 @@ class CodeWriter:
 
     def __get_push_instructions(self):
         return ["@SP", "A=M", "M=D", "@SP", "M=M+1"]
-    
+
     def __write_instructions(self, instructions):
         for instruction in instructions:
             self.stream.write(f"{instruction}\n")
