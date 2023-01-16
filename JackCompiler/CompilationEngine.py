@@ -10,13 +10,9 @@ from constants import *
 class CompilationEngine:
     def __init__(self, tokenizer: JackTokenizer = None, vm_writer: VMWriter = None):
         self.tokenizer = tokenizer
-        self.output_file = open(vm_writer, "w")
-        self.indents = [0]
+        self.vm_writer = vm_writer
         self.symbol_table = SymbolTable()
         self.class_name = None
-
-    def __close_file(self):
-        self.output_file.close()
 
     def __check_token(
         self,
@@ -26,6 +22,7 @@ class CompilationEngine:
         assert (
             actual_token == expected_token.value
         ), f"Expected {expected_token.value} but found {actual_token}"
+        self.tokenizer.advance()
 
     def __write_token(self, token: str, end=False, auto=False, insert_newline=False):
         token_to_write = token
@@ -44,19 +41,18 @@ class CompilationEngine:
         return any(choice == current_token for choice in choices) == True
 
     def __handle_type_rule(self) -> str:
+        # Consume 'type' token
         token_type = None
 
         if self.tokenizer.tokenType() == LexicalElement.KEYWORD:
             token_type = self.tokenizer.keyWord()
-            self.__handle_token_output(token_type, LexicalElement.KEYWORD.value)
         else:
             token_type = self.tokenizer.identifier()
-            self.__handle_identifier(token_type, "used")
 
+        self.tokenizer.advance()
         return token_type
 
     def __handle_identifier(self, name: str, usage: str):
-        self.indents.append(self.indents[-1] + 1)
         self.__write_token("identifier", insert_newline=True)
         self.__handle_token_output(name, "name", False)
         category = self.symbol_table.kindOf(name)
@@ -69,33 +65,30 @@ class CompilationEngine:
         self.__handle_token_output(self.symbol_table.indexOf(name), "index", False)
         self.__handle_token_output(usage, "usage", False)
         self.__write_token("identifier", True, True)
-        self.indents.pop()
         self.tokenizer.advance()
 
     def __handle_token_output(self, token: str, token_type: str, advance=True):
-        self.indents.append(self.indents[-1] + 1)
         self.__write_token(token_type)
         self.output_file.write(f" {token} ")
         self.__write_token(token_type, True)
-        self.indents.pop()
 
         if advance:
             self.tokenizer.advance()
 
     def compileClass(self):
         # rule -> 'class' className '{' classVarDec* subroutineDec* '}'
-        self.__check_token(self.tokenizer.keyWord(), KeywordType.CLASS)
-        self.__write_token(KeywordType.CLASS.value, insert_newline=True)
-        self.indents.append(self.indents[-1] + 1)
-        self.__handle_token_output(
-            self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
-        )
-        self.class_name = self.tokenizer.identifier()
-        self.__handle_identifier(self.tokenizer.identifier(), "declared")
+        self.__check_token(
+            self.tokenizer.keyWord(), KeywordType.CLASS
+        )  # Consume 'class' token
 
-        self.__check_token(self.tokenizer.symbol(), SymbolType.LEFT_BRACE)
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+        self.class_name = self.tokenizer.identifier()  # Consume className identifier
+        self.tokenizer.advance()
 
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.LEFT_BRACE
+        )  # Consume '{' token
+
+        # Consume classVarDec* rule
         while (
             self.tokenizer.tokenType() == LexicalElement.KEYWORD
             and self.__handle_or_rule(
@@ -105,6 +98,7 @@ class CompilationEngine:
         ):
             self.compileClassVarDec()
 
+        # Consume subroutineDec* rule
         while (
             self.tokenizer.tokenType() == LexicalElement.KEYWORD
             and self.__handle_or_rule(
@@ -118,150 +112,154 @@ class CompilationEngine:
         ):
             self.compileSubroutine()
 
-        self.__check_token(self.tokenizer.symbol(), SymbolType.RIGHT_BRACE)
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-        self.indents.pop()
-        self.__write_token(KeywordType.CLASS.value, True, True)
-        self.__close_file()
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.RIGHT_BRACE
+        )  # Consume '}' token
+        self.vm_writer.close()
 
     def compileClassVarDec(self):
         # rule -> ('static'|'field') type varName (',' varName)* ';'
-        self.indents.append(self.indents[-1] + 1)
-        self.__write_token("classVarDec", insert_newline=True)
-
-        current_token = self.tokenizer.keyWord()
+        current_token = self.tokenizer.keyWord()  # Consume ('static' | 'field') token
         token_kind = current_token
-        self.__handle_token_output(
-            KeywordType(current_token).value, LexicalElement.KEYWORD.value
-        )
+        self.tokenizer.advance()
 
-        token_type = self.__handle_type_rule()
+        token_type = self.__handle_type_rule()  # Consume type token
 
-        self.symbol_table.define(self.tokenizer.identifier(), token_type, token_kind)
-        self.__handle_identifier(self.tokenizer.identifier(), "declared")
+        self.symbol_table.define(
+            self.tokenizer.identifier(), token_type, token_kind
+        )  # Consume varName token
+        self.tokenizer.advance()
 
+        # Consume (',' varName)*
         while (
             self.tokenizer.tokenType() == LexicalElement.SYMBOL
             and self.tokenizer.symbol() == SymbolType.COMMA.value
         ):
-            self.__handle_token_output(
-                self.tokenizer.symbol(), LexicalElement.SYMBOL.value
-            )
+            self.tokenizer.advance()  # Consume ',' token
             self.symbol_table.define(
                 self.tokenizer.identifier(), token_type, token_kind
             )
-            self.__handle_identifier(self.tokenizer.identifier(), "declared")
+            self.tokenizer.advance()  # Consume varName token
 
-        self.__check_token(self.tokenizer.symbol(), SymbolType.SEMI_COLON)
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-        self.__write_token("classVarDec", True, True)
-        self.indents.pop()
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.SEMI_COLON
+        )  # Consume ';' token
 
     def compileSubroutine(self):
         # rule -> ('constructor' | 'function' | 'method') ('void' | type) subroutineName
         #         '(' parameterList ')' subroutineBody
         self.symbol_table.reset()
-        self.symbol_table.define("this", self.class_name, VariableType.ARG.value)
-        self.indents.append(self.indents[-1] + 1)
-        self.__write_token("subroutineDec", insert_newline=True)
-        self.__handle_token_output(
-            self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
-        )
-        self.__handle_type_rule()
-        self.__handle_identifier(self.tokenizer.identifier(), "declared")
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+
+        self.subroutine_type = (
+            self.tokenizer.keyWord()
+        )  # Consume ('constructor' | 'function' | 'method') token
+        if self.subroutine_type == "method":
+            self.symbol_table.define("this", self.class_name, VariableType.ARG.value)
+
+        self.tokenizer.advance()
+
+        subroutine_return = self.__handle_type_rule()  # Consume type
+        self.subroutine_name = self.tokenizer.identifier()  # Consume subroutineName
+        self.tokenizer.advance()
+
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.LEFT_PAREN
+        )  # Consume '(' token
+
+        # Consume parameterList rule
         self.compileParameterList()
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
+
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.RIGHT_PAREN
+        )  # Consume ')' token
+
+        # Consume subroutineBody rule
         self.compileSubroutineBody()
-        self.__write_token("subroutineDec", True, True)
-        self.indents.pop()
 
     def compileParameterList(self):
         # rule -> ((type varName) (',' type varName)*)?
-        self.indents.append(self.indents[-1] + 1)
-        self.__write_token("parameterList", insert_newline=True)
-
         if self.tokenizer.tokenType() != LexicalElement.SYMBOL:
-            token_type = self.__handle_type_rule()
-            self.symbol_table.define(
+            token_type = self.__handle_type_rule()  # Consume type token
+            self.symbol_table.define(  # Consume varName token
                 self.tokenizer.identifier(), token_type, VariableType.ARG.value
             )
-            self.__handle_identifier(self.tokenizer.identifier(), "declared")
+            self.tokenizer.advance()
 
+            # Consume (',' type varName)*
             while (
                 self.tokenizer.tokenType() == LexicalElement.SYMBOL
                 and self.tokenizer.symbol() == SymbolType.COMMA.value
             ):
-                self.__handle_token_output(
-                    self.tokenizer.symbol(), LexicalElement.SYMBOL.value
-                )
-                token_type = self.__handle_type_rule()
-                self.symbol_table.define(
+                self.tokenizer.advance()  # Consume ',' token
+                token_type = self.__handle_type_rule()  # Consume type token
+                self.symbol_table.define(  # Consume varName token
                     self.tokenizer.identifier(), token_type, VariableType.ARG.value
                 )
-                self.__handle_identifier(self.tokenizer.identifier(), "declared")
-
-        self.__write_token("parameterList", True, True)
-        self.indents.pop()
+                self.tokenizer.advance()
 
     def compileSubroutineBody(self):
         # rule -> '{' varDec* statements '}'
-        self.indents.append(self.indents[-1] + 1)
-        self.__write_token("subroutineBody", insert_newline=True)
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.LEFT_BRACE
+        )  # Consume '{' token
 
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-
+        # Consume varDec*
         while (
             self.tokenizer.tokenType() == LexicalElement.KEYWORD
             and self.tokenizer.keyWord() == KeywordType.VAR.value
         ):
             self.compileVarDec()
 
-        self.compileStatements()
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-        self.__write_token("subroutineBody", True, True)
-        self.indents.pop()
+        self.vm_writer.writeFunction(
+            f"{self.class_name}.{self.subroutine_name}",
+            self.symbol_table.varCount(VariableType.LOCAL),
+        )
+
+        if self.subroutine_type == "method":
+            self.vm_writer.writePush(VirtualMemorySegmentType.ARGUMENT, 0)
+            self.vm_writer.writePop(VirtualMemorySegmentType.POINTER, 0)
+        elif self.subroutine_type == "constructor":
+            self.vm_writer.writePush(
+                VirtualMemorySegmentType.CONSTANT,
+                self.symbol_table.varCount(VariableType.FIELD),
+            )
+            self.vm_writer.writeCall("Memory.alloc", 1)
+            self.vm_writer.writePop(VirtualMemorySegmentType.POINTER, 0)
+
+        self.compileStatements()  # Consume statements
+        self.__check_token(
+            self.tokenizer.symbol(), SymbolType.RIGHT_BRACE
+        )  # Consume '}' token
 
     def compileVarDec(self):
         # varDec -> 'var' type varName (',' varName)* ';'
-        self.indents.append(self.indents[-1] + 1)
-        self.__write_token("varDec", insert_newline=True)
-
-        self.__handle_token_output(
-            self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
-        )
-        token_type = self.__handle_type_rule()
-        self.symbol_table.define(
+        self.__check_token(self.tokenizer.keyWord(), KeywordType.VAR) # Consume 'var' token
+        token_type = self.__handle_type_rule() # Consume 'type' token
+        self.symbol_table.define( # Consume varName
             self.tokenizer.identifier(),
             token_type,
             VirtualMemorySegmentType.LOCAL.value,
         )
-        self.__handle_identifier(self.tokenizer.identifier(), "declared")
+        self.tokenizer.advance()
 
+        # Consume (',' varName)*
         while (
             self.tokenizer.tokenType() == LexicalElement.SYMBOL
             and self.tokenizer.symbol() == SymbolType.COMMA.value
         ):
-            self.__handle_token_output(
-                self.tokenizer.symbol(), LexicalElement.SYMBOL.value
-            )
-            self.symbol_table.define(
+            self.tokenizer.advance() # Consume ',' token
+            self.symbol_table.define( # Consume varName token
                 self.tokenizer.identifier(),
                 token_type,
                 VirtualMemorySegmentType.LOCAL.value,
             )
-            self.__handle_identifier(self.tokenizer.identifier(), "declared")
+            self.tokenizer.advance()
 
-        self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
-        self.__write_token("varDec", True, True)
-        self.indents.pop()
+        self.__check_token(self.tokenizer.symbol(), SymbolType.SEMI_COLON) # Consume ';' token
 
     def compileStatements(self):
         # rule -> statement*
         # statement -> letStatement | ifStatement | whileStatement | doStatement | returnStatement
-        self.indents.append(self.indents[-1] + 1)
-        self.__write_token("statements", insert_newline=True)
-
         while (
             self.tokenizer.tokenType() == LexicalElement.KEYWORD
             and self.__handle_or_rule(
@@ -287,12 +285,9 @@ class CompilationEngine:
             elif current_token == KeywordType.RETURN.value:
                 self.compileReturn()
 
-        self.__write_token("statements", True, True)
-        self.indents.pop()
-
+        
     def compileLet(self):
         # rule -> 'let' varName ('[' expression, ']')? = expression ';'
-        self.indents.append(self.indents[-1] + 1)
         self.__write_token("letStatement", insert_newline=True)
 
         self.__handle_token_output(
@@ -313,11 +308,9 @@ class CompilationEngine:
         self.compileExpression()
         self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
         self.__write_token("letStatement", True, True)
-        self.indents.pop()
 
     def compileIf(self):
         # rule -> 'if' '(' expression ')' '{' statements '}' ('else' '{' statements '}')?
-        self.indents.append(self.indents[-1] + 1)
         self.__write_token("ifStatement", insert_newline=True)
 
         self.__handle_token_output(
@@ -343,11 +336,9 @@ class CompilationEngine:
             )
 
         self.__write_token("ifStatement", True, True)
-        self.indents.pop()
 
     def compileWhile(self):
         # rule -> 'while' '(' expression ')' '{' statements '}'
-        self.indents.append(self.indents[-1] + 1)
         self.__write_token("whileStatement", insert_newline=True)
 
         self.__handle_token_output(
@@ -361,7 +352,6 @@ class CompilationEngine:
         self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
 
         self.__write_token("whileStatement", True, True)
-        self.indents.pop()
 
     def __handle_subroutine_call(self):
         # rule -> subroutineName '(' expressionList ')' | (className|varName)'.'subroutineName '(' expressionList ')'
@@ -377,7 +367,6 @@ class CompilationEngine:
 
     def compileDo(self):
         # rule -> 'do' subroutineCall ';'
-        self.indents.append(self.indents[-1] + 1)
         self.__write_token("doStatement", insert_newline=True)
 
         self.__handle_token_output(
@@ -387,11 +376,9 @@ class CompilationEngine:
         self.__handle_subroutine_call()
         self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
         self.__write_token("doStatement", True, True)
-        self.indents.pop()
 
     def compileReturn(self):
         # rule -> 'return' expression? ';'
-        self.indents.append(self.indents[-1] + 1)
         self.__write_token("returnStatement", insert_newline=True)
 
         self.__handle_token_output(
@@ -403,12 +390,10 @@ class CompilationEngine:
 
         self.__handle_token_output(self.tokenizer.symbol(), LexicalElement.SYMBOL.value)
         self.__write_token("returnStatement", True, True)
-        self.indents.pop()
 
     def compileExpression(self):
         # rule -> term (op term)*
         # op -> '+' | '-' | '*' | '/' | '&' | '|' | '<' | '>' | '='
-        self.indents.append(self.indents[-1] + 1)
         self.__write_token("expression", insert_newline=True)
         self.compileTerm()
 
@@ -435,14 +420,12 @@ class CompilationEngine:
             self.compileTerm()
 
         self.__write_token("expression", True, True)
-        self.indents.pop()
 
     def compileTerm(self):
         # rule -> integerConstant | stringConstant | keywordConstant | varName |
         # varName '[' expression ']' | '(' expression ')' | (unaryOp term) | subroutineCall
         # unaryOp -> '-' | '~'
         # keywordConstant -> 'true' | 'false' | 'null' | 'this'
-        self.indents.append(self.indents[-1] + 1)
         self.__write_token("term", insert_newline=True)
 
         token_type = self.tokenizer.tokenType()
@@ -486,11 +469,9 @@ class CompilationEngine:
                 self.__handle_subroutine_call()
 
         self.__write_token("term", True, True)
-        self.indents.pop()
 
     def compileExpressionList(self) -> int:
         # rule -> (expression (',' expression)*)?
-        self.indents.append(self.indents[-1] + 1)
         self.__write_token("expressionList", insert_newline=True)
 
         if self.tokenizer.symbol() != SymbolType.RIGHT_PAREN.value:
@@ -505,4 +486,3 @@ class CompilationEngine:
                 self.compileExpression()
 
         self.__write_token("expressionList", True, True)
-        self.indents.pop()

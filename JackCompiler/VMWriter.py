@@ -29,8 +29,8 @@ class VMWriter:
     def writeCall(self, name: str, nArgs: int):
         self.__file_write(f"call {name} {nArgs}")
 
-    def writeFunction(self, name: str, nArgs: int):
-        self.__file_write(f"function {name} {nArgs}")
+    def writeFunction(self, name: str, nVars: int):
+        self.__file_write(f"function {name} {nVars}")
 
     def writeReturn(self):
         self.__file_write("return")
