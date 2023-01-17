@@ -17,7 +17,7 @@ class JackTokenizer:
         self.token_count = 0
     
     def hasMoreTokens(self) -> bool:
-        return self.characters_read < len(self.file_content) - 1
+        return self.characters_read < len(self.file_content)
     
     def advance(self):
         self.current_token = None

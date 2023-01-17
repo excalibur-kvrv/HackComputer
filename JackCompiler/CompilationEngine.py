@@ -24,21 +24,8 @@ class CompilationEngine:
     ):
         assert (
             actual_token == expected_token.value
-        ), f"Expected {expected_token.value} but found {actual_token}"
+        ), f"Expected {expected_token.value} but found {actual_token} in {self.class_name}"
         self.tokenizer.advance()
-
-    def __write_token(self, token: str, end=False, auto=False, insert_newline=False):
-        token_to_write = token
-
-        if end:
-            token_to_write = f"</{token_to_write}>\n"
-            if auto:
-                token_to_write = f"{' ' * self.indents[-1]}{token_to_write}"
-            self.output_file.write(f"{token_to_write}")
-        else:
-            self.output_file.write(f"{' ' * self.indents[-1]}<{token_to_write}>")
-            if insert_newline:
-                self.output_file.write("\n")
 
     def __handle_or_rule(self, current_token: str, choices: list):
         return any(choice == current_token for choice in choices) == True
@@ -54,29 +41,6 @@ class CompilationEngine:
 
         self.tokenizer.advance()
         return token_type
-
-    def __handle_identifier(self, name: str, usage: str):
-        self.__write_token("identifier", insert_newline=True)
-        self.__handle_token_output(name, "name", False)
-        category = self.symbol_table.kindOf(name)
-        if category == "none":
-            if name[0].isupper():
-                category = "class"
-            else:
-                category = "subroutine"
-        self.__handle_token_output(category, "category", False)
-        self.__handle_token_output(self.symbol_table.indexOf(name), "index", False)
-        self.__handle_token_output(usage, "usage", False)
-        self.__write_token("identifier", True, True)
-        self.tokenizer.advance()
-
-    def __handle_token_output(self, token: str, token_type: str, advance=True):
-        self.__write_token(token_type)
-        self.output_file.write(f" {token} ")
-        self.__write_token(token_type, True)
-
-        if advance:
-            self.tokenizer.advance()
 
     def compileClass(self):
         # rule -> 'class' className '{' classVarDec* subroutineDec* '}'
@@ -161,7 +125,7 @@ class CompilationEngine:
 
         self.tokenizer.advance()
 
-        subroutine_return = self.__handle_type_rule()  # Consume type
+        self.subroutine_return = self.__handle_type_rule()  # Consume type
         self.subroutine_name = self.tokenizer.identifier()  # Consume subroutineName
         self.tokenizer.advance()
 
@@ -215,7 +179,7 @@ class CompilationEngine:
 
         self.vm_writer.writeFunction(
             f"{self.class_name}.{self.subroutine_name}",
-            self.symbol_table.varCount(VariableType.LOCAL),
+            self.symbol_table.varCount(VariableType.VAR),
         )
 
         if self.subroutine_type == "method":
@@ -243,7 +207,7 @@ class CompilationEngine:
         self.symbol_table.define(  # Consume varName
             self.tokenizer.identifier(),
             token_type,
-            VirtualMemorySegmentType.LOCAL.value,
+            VariableType.VAR.value,
         )
         self.tokenizer.advance()
 
@@ -256,7 +220,7 @@ class CompilationEngine:
             self.symbol_table.define(  # Consume varName token
                 self.tokenizer.identifier(),
                 token_type,
-                VirtualMemorySegmentType.LOCAL.value,
+                VariableType.VAR.value,
             )
             self.tokenizer.advance()
 
@@ -419,26 +383,33 @@ class CompilationEngine:
 
     def __handle_subroutine_call(self, identifier: str):
         # rule -> subroutineName '(' expressionList ')' | (className|varName)'.'subroutineName '(' expressionList ')'
-        subroutine_name = identifier
+        subroutine_name = f"{self.class_name}.{identifier}"
+        is_direct = True
         expression_count = 0
-
         if self.tokenizer.symbol() == SymbolType.DOT.value:
+            is_direct = False
             self.__check_token(
                 self.tokenizer.symbol(), SymbolType.DOT
             )  # Consume '.' token
             current_token = self.tokenizer.identifier()
 
-            if current_token[0].isupper():
+            if current_token[0].islower() and identifier[0].islower():
                 self.vm_writer.writePush(
-                    self.symbol_table.kindOf(current_token),
-                    self.symbol_table.indexOf(current_token),
+                    self.symbol_table.kindOf(identifier),
+                    self.symbol_table.indexOf(identifier),
                 )
                 expression_count = 1
 
-            subroutine_name = (
-                f"{identifier}.{current_token}"  # Consume subroutine token
-            )
+            cls_name = identifier
+            if not cls_name[0].isupper():
+                cls_name = self.symbol_table.typeOf(identifier)
+
+            subroutine_name = f"{cls_name}.{current_token}"  # Consume subroutine token
             self.tokenizer.advance()
+
+        if is_direct:
+            self.vm_writer.writePush(VirtualMemorySegmentType.POINTER, 0)
+            expression_count += 1
 
         self.__check_token(
             self.tokenizer.symbol(), SymbolType.LEFT_PAREN
@@ -477,13 +448,38 @@ class CompilationEngine:
         self.__check_token(
             self.tokenizer.symbol(), SymbolType.SEMI_COLON
         )  # Consume ';' token
+        if self.subroutine_return == "void":
+            self.vm_writer.writePush(VirtualMemorySegmentType.CONSTANT, 0)
         self.vm_writer.writeReturn()
+
+    def __get_cmd(self, op: str):
+        cmd = None
+
+        if op == "+":
+            cmd = CommandType.ADD
+        elif op == "-":
+            cmd = CommandType.SUB
+        elif op == "/":
+            self.vm_writer.writeCall("Math.divide", 2)
+        elif op == "*":
+            self.vm_writer.writeCall("Math.multiply", 2)
+        elif op == "&amp;":
+            cmd = CommandType.AND
+        elif op == "|":
+            cmd = CommandType.OR
+        elif op == "&lt;":
+            cmd = CommandType.LT
+        elif op == "&gt;":
+            cmd = CommandType.GT
+        elif op == "=":
+            cmd = CommandType.EQ
+
+        return cmd
 
     def compileExpression(self):
         # rule -> term (op term)*
         # op -> '+' | '-' | '*' | '/' | '&' | '|' | '<' | '>' | '='
-        self.__write_token("expression", insert_newline=True)
-        self.compileTerm()
+        self.compileTerm()  # Consume term
 
         while (
             self.tokenizer.tokenType() == LexicalElement.SYMBOL
@@ -502,61 +498,82 @@ class CompilationEngine:
                 ],
             )
         ):
-            self.__handle_token_output(
-                self.tokenizer.symbol(), LexicalElement.SYMBOL.value
-            )
-            self.compileTerm()
+            op = self.tokenizer.symbol()  # Consume op
+            self.tokenizer.advance()
 
-        self.__write_token("expression", True, True)
+            self.compileTerm()  # Consume term
+
+            cmd = self.__get_cmd(op)
+            if cmd:
+                self.vm_writer.writeArithmetic(cmd)
 
     def compileTerm(self):
         # rule -> integerConstant | stringConstant | keywordConstant | varName |
         # varName '[' expression ']' | '(' expression ')' | (unaryOp term) | subroutineCall
         # unaryOp -> '-' | '~'
         # keywordConstant -> 'true' | 'false' | 'null' | 'this'
-        self.__write_token("term", insert_newline=True)
 
         token_type = self.tokenizer.tokenType()
         if token_type == LexicalElement.INT_CONST:
-            self.__handle_token_output(
-                self.tokenizer.intVal(), LexicalElement.INT_CONST.value
-            )
+            int_const = self.tokenizer.intVal()  # Consume intConstant
+            self.vm_writer.writePush(VirtualMemorySegmentType.CONSTANT, int_const)
+            self.tokenizer.advance()
         elif token_type == LexicalElement.STRING_CONST:
-            self.__handle_token_output(
-                self.tokenizer.stringVal(), LexicalElement.STRING_CONST.value
-            )
+            str_val = self.tokenizer.stringVal()  # Consume strConstant
+            self.vm_writer.writePush(VirtualMemorySegmentType.CONSTANT, len(str_val))
+            self.vm_writer.writeCall("String.new", 1)
+            for char in str_val:
+                self.vm_writer.writePush(VirtualMemorySegmentType.CONSTANT, ord(char))
+                self.vm_writer.writeCall("String.appendChar", 2)
+            self.tokenizer.advance()
         elif token_type == LexicalElement.KEYWORD:
-            self.__handle_token_output(
-                self.tokenizer.keyWord(), LexicalElement.KEYWORD.value
-            )
+            keyword = self.tokenizer.keyWord()  # Consume keyword
+            if keyword == "null" or keyword == "false":
+                self.vm_writer.writePush(VirtualMemorySegmentType.CONSTANT, 0)
+            elif keyword == "true":
+                self.vm_writer.writePush(VirtualMemorySegmentType.CONSTANT, 1)
+                self.vm_writer.writeArithmetic(CommandType.NEG)
+            elif keyword == "this":
+                self.vm_writer.writePush(VirtualMemorySegmentType.POINTER, 0)
+            self.tokenizer.advance()
         elif token_type == LexicalElement.SYMBOL:
+            # Handle '(' expression ')' | unaryop term
             current_token = self.tokenizer.symbol()
+            self.tokenizer.advance()
             if current_token == SymbolType.LEFT_PAREN.value:
-                self.__handle_token_output(current_token, LexicalElement.SYMBOL.value)
                 self.compileExpression()
-                self.__handle_token_output(
-                    self.tokenizer.symbol(), LexicalElement.SYMBOL.value
-                )
+                self.__check_token(self.tokenizer.symbol(), SymbolType.RIGHT_PAREN)
             else:
-                self.__handle_token_output(current_token, LexicalElement.SYMBOL.value)
                 self.compileTerm()
+                cmd = CommandType.NOT
+                if current_token == "-":
+                    cmd = CommandType.NEG
+                self.vm_writer.writeArithmetic(cmd)
         elif token_type == LexicalElement.IDENTIFIER:
-            self.__handle_identifier(self.tokenizer.identifier(), "used")
+            var_name = self.tokenizer.identifier()  # Consume varName
+            self.tokenizer.advance()
+
             if self.tokenizer.symbol() == SymbolType.LEFT_SQ_BRACE.value:
-                self.__handle_token_output(
-                    self.tokenizer.symbol(), LexicalElement.SYMBOL.value
+                self.vm_writer.writePush(
+                    self.symbol_table.kindOf(var_name),
+                    self.symbol_table.indexOf(var_name),
                 )
+                self.__check_token(self.tokenizer.symbol(), SymbolType.LEFT_SQ_BRACE)
                 self.compileExpression()
-                self.__handle_token_output(
-                    self.tokenizer.symbol(), LexicalElement.SYMBOL.value
-                )
+                self.__check_token(self.tokenizer.symbol(), SymbolType.RIGHT_SQ_BRACE)
+                self.vm_writer.writeArithmetic(CommandType.ADD)
+                self.vm_writer.writePop(VirtualMemorySegmentType.POINTER, 1)
+                self.vm_writer.writePush(VirtualMemorySegmentType.THAT, 0)
             elif (
                 self.tokenizer.symbol() == SymbolType.DOT.value
                 or self.tokenizer.symbol() == SymbolType.LEFT_PAREN.value
             ):
-                self.__handle_subroutine_call()
-
-        self.__write_token("term", True, True)
+                self.__handle_subroutine_call(var_name)
+            else:
+                self.vm_writer.writePush(
+                    self.symbol_table.kindOf(var_name),
+                    self.symbol_table.indexOf(var_name),
+                )
 
     def compileExpressionList(self) -> int:
         # rule -> (expression (',' expression)*)?

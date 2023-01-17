@@ -4,8 +4,8 @@ from enum import Enum
 class VariableType(Enum):
     STATIC = "static"
     FIELD = "field"
-    ARG = "arg"
-    VAR = "var"
+    ARG = "argument"
+    VAR = "local"
     NONE = "none"
 
 

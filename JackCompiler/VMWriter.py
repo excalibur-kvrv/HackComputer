@@ -9,10 +9,16 @@ class VMWriter:
         self.output_file.write(f"{content}\n")
 
     def writePush(self, segment: VirtualMemorySegmentType, index: int):
-        self.__file_write(f"push {segment.value} {index}")
+        s = segment
+        if type(s) != str:
+            s = s.value
+        self.__file_write(f"push {s} {index}")
 
     def writePop(self, segment: VirtualMemorySegmentType, index: int):
-        self.__file_write(f"pop {segment.value} {index}")
+        s = segment
+        if type(s) != str:
+            s = s.value
+        self.__file_write(f"pop {s} {index}")
 
     def writeArithmetic(self, command: CommandType):
         self.__file_write(f"{command.value}")

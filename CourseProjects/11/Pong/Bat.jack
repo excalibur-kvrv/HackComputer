@@ -52,6 +52,14 @@ class Bat {
 
     /** Draws the bat. */
     method void draw() {
+        do Output.printInt(x);
+        do Output.println();
+        do Output.printInt(y);
+        do Output.println();
+        do Output.printInt(width);
+        do Output.println();
+        do Output.printInt(y+height);
+        do Output.println();
         do Screen.drawRectangle(x, y, x + width, y + height);
         return;
     }

@@ -6,14 +6,14 @@ class SymbolTable:
 			"static": 0,
 			"field": 0,
 			"local": 0,
-			"arg": 0
+			"argument": 0
 		}
         self.class_level = {}
         self.subroutine_level = {}
     
     def reset(self):
         self.var_count["local"] = 0
-        self.var_count["arg"] = 0
+        self.var_count["argument"] = 0
         self.subroutine_level = {}
     
     def define(self, name: str, type: str, kind: VariableType):
@@ -34,7 +34,10 @@ class SymbolTable:
         return VariableType.NONE.value
     
     def kindOf(self, name: str) -> VariableType:
-        return self.__get_property(name, "kind")
+        kind = self.__get_property(name, "kind")
+        if kind == "field":
+            return "this"
+        return kind
     
     def typeOf(self, name: str) -> str:
         return self.__get_property(name, "type")
