@@ -1,0 +1,532 @@
+function Game.new 0
+push constant 1
+call Memory.alloc 1
+pop pointer 0
+push constant 1
+pop this 0
+push pointer 0
+return
+function Game.drawX 0
+push argument 0
+push constant 0
+eq
+not
+if-goto Game.drawX.1
+push constant 215
+push constant 80
+push constant 225
+push constant 90
+call Screen.drawLine 4
+pop temp 0
+push constant 225
+push constant 80
+push constant 215
+push constant 90
+call Screen.drawLine 4
+pop temp 0
+goto Game.drawX.0
+label Game.drawX.1
+label Game.drawX.0
+push argument 0
+push constant 1
+eq
+not
+if-goto Game.drawX.3
+push constant 248
+push constant 80
+push constant 258
+push constant 90
+call Screen.drawLine 4
+pop temp 0
+push constant 258
+push constant 80
+push constant 248
+push constant 90
+call Screen.drawLine 4
+pop temp 0
+goto Game.drawX.2
+label Game.drawX.3
+label Game.drawX.2
+push argument 0
+push constant 2
+eq
+not
+if-goto Game.drawX.5
+push constant 280
+push constant 80
+push constant 290
+push constant 90
+call Screen.drawLine 4
+pop temp 0
+push constant 290
+push constant 80
+push constant 280
+push constant 90
+call Screen.drawLine 4
+pop temp 0
+goto Game.drawX.4
+label Game.drawX.5
+label Game.drawX.4
+push argument 0
+push constant 3
+eq
+not
+if-goto Game.drawX.7
+push constant 215
+push constant 110
+push constant 225
+push constant 120
+call Screen.drawLine 4
+pop temp 0
+push constant 225
+push constant 110
+push constant 215
+push constant 120
+call Screen.drawLine 4
+pop temp 0
+goto Game.drawX.6
+label Game.drawX.7
+label Game.drawX.6
+push argument 0
+push constant 4
+eq
+not
+if-goto Game.drawX.9
+push constant 248
+push constant 110
+push constant 258
+push constant 120
+call Screen.drawLine 4
+pop temp 0
+push constant 258
+push constant 110
+push constant 248
+push constant 120
+call Screen.drawLine 4
+pop temp 0
+goto Game.drawX.8
+label Game.drawX.9
+label Game.drawX.8
+push argument 0
+push constant 5
+eq
+not
+if-goto Game.drawX.11
+push constant 280
+push constant 110
+push constant 290
+push constant 120
+call Screen.drawLine 4
+pop temp 0
+push constant 290
+push constant 110
+push constant 280
+push constant 120
+call Screen.drawLine 4
+pop temp 0
+goto Game.drawX.10
+label Game.drawX.11
+label Game.drawX.10
+push argument 0
+push constant 6
+eq
+not
+if-goto Game.drawX.13
+push constant 215
+push constant 138
+push constant 225
+push constant 148
+call Screen.drawLine 4
+pop temp 0
+push constant 225
+push constant 138
+push constant 215
+push constant 148
+call Screen.drawLine 4
+pop temp 0
+goto Game.drawX.12
+label Game.drawX.13
+label Game.drawX.12
+push argument 0
+push constant 7
+eq
+not
+if-goto Game.drawX.15
+push constant 248
+push constant 138
+push constant 258
+push constant 148
+call Screen.drawLine 4
+pop temp 0
+push constant 258
+push constant 138
+push constant 248
+push constant 148
+call Screen.drawLine 4
+pop temp 0
+goto Game.drawX.14
+label Game.drawX.15
+label Game.drawX.14
+push argument 0
+push constant 8
+eq
+not
+if-goto Game.drawX.17
+push constant 280
+push constant 138
+push constant 290
+push constant 148
+call Screen.drawLine 4
+pop temp 0
+push constant 290
+push constant 138
+push constant 280
+push constant 148
+call Screen.drawLine 4
+pop temp 0
+goto Game.drawX.16
+label Game.drawX.17
+label Game.drawX.16
+push constant 0
+return
+function Game.drawO 0
+push argument 0
+push constant 0
+eq
+not
+if-goto Game.drawO.19
+push constant 220
+push constant 85
+push constant 7
+call Screen.drawCircle 3
+pop temp 0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push constant 220
+push constant 85
+push constant 6
+call Screen.drawCircle 3
+pop temp 0
+push constant 1
+neg
+call Screen.setColor 1
+pop temp 0
+goto Game.drawO.18
+label Game.drawO.19
+label Game.drawO.18
+push argument 0
+push constant 1
+eq
+not
+if-goto Game.drawO.21
+push constant 252
+push constant 85
+push constant 7
+call Screen.drawCircle 3
+pop temp 0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push constant 252
+push constant 85
+push constant 6
+call Screen.drawCircle 3
+pop temp 0
+push constant 1
+neg
+call Screen.setColor 1
+pop temp 0
+goto Game.drawO.20
+label Game.drawO.21
+label Game.drawO.20
+push argument 0
+push constant 2
+eq
+not
+if-goto Game.drawO.23
+push constant 285
+push constant 85
+push constant 7
+call Screen.drawCircle 3
+pop temp 0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push constant 285
+push constant 85
+push constant 6
+call Screen.drawCircle 3
+pop temp 0
+push constant 1
+neg
+call Screen.setColor 1
+pop temp 0
+goto Game.drawO.22
+label Game.drawO.23
+label Game.drawO.22
+push argument 0
+push constant 3
+eq
+not
+if-goto Game.drawO.25
+push constant 220
+push constant 115
+push constant 7
+call Screen.drawCircle 3
+pop temp 0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push constant 220
+push constant 115
+push constant 6
+call Screen.drawCircle 3
+pop temp 0
+push constant 1
+neg
+call Screen.setColor 1
+pop temp 0
+goto Game.drawO.24
+label Game.drawO.25
+label Game.drawO.24
+push argument 0
+push constant 4
+eq
+not
+if-goto Game.drawO.27
+push constant 252
+push constant 115
+push constant 7
+call Screen.drawCircle 3
+pop temp 0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push constant 252
+push constant 115
+push constant 6
+call Screen.drawCircle 3
+pop temp 0
+push constant 1
+neg
+call Screen.setColor 1
+pop temp 0
+goto Game.drawO.26
+label Game.drawO.27
+label Game.drawO.26
+push argument 0
+push constant 5
+eq
+not
+if-goto Game.drawO.29
+push constant 285
+push constant 115
+push constant 7
+call Screen.drawCircle 3
+pop temp 0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push constant 285
+push constant 115
+push constant 6
+call Screen.drawCircle 3
+pop temp 0
+push constant 1
+neg
+call Screen.setColor 1
+pop temp 0
+goto Game.drawO.28
+label Game.drawO.29
+label Game.drawO.28
+push argument 0
+push constant 6
+eq
+not
+if-goto Game.drawO.31
+push constant 220
+push constant 143
+push constant 7
+call Screen.drawCircle 3
+pop temp 0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push constant 220
+push constant 143
+push constant 6
+call Screen.drawCircle 3
+pop temp 0
+push constant 1
+neg
+call Screen.setColor 1
+pop temp 0
+goto Game.drawO.30
+label Game.drawO.31
+label Game.drawO.30
+push argument 0
+push constant 7
+eq
+not
+if-goto Game.drawO.33
+push constant 252
+push constant 143
+push constant 7
+call Screen.drawCircle 3
+pop temp 0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push constant 252
+push constant 143
+push constant 6
+call Screen.drawCircle 3
+pop temp 0
+push constant 1
+neg
+call Screen.setColor 1
+pop temp 0
+goto Game.drawO.32
+label Game.drawO.33
+label Game.drawO.32
+push argument 0
+push constant 8
+eq
+not
+if-goto Game.drawO.35
+push constant 285
+push constant 143
+push constant 7
+call Screen.drawCircle 3
+pop temp 0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push constant 285
+push constant 143
+push constant 6
+call Screen.drawCircle 3
+pop temp 0
+push constant 1
+neg
+call Screen.setColor 1
+pop temp 0
+goto Game.drawO.34
+label Game.drawO.35
+label Game.drawO.34
+push constant 0
+return
+function Game.start 0
+push constant 0
+push constant 25
+call Output.moveCursor 2
+pop temp 0
+push constant 16
+call String.new 1
+push constant 84
+call String.appendChar 2
+push constant 73
+call String.appendChar 2
+push constant 67
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 84
+call String.appendChar 2
+push constant 65
+call String.appendChar 2
+push constant 67
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 84
+call String.appendChar 2
+push constant 79
+call String.appendChar 2
+push constant 69
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 71
+call String.appendChar 2
+push constant 65
+call String.appendChar 2
+push constant 77
+call String.appendChar 2
+push constant 69
+call String.appendChar 2
+call Output.printString 1
+pop temp 0
+push constant 1
+neg
+call Screen.setColor 1
+pop temp 0
+push constant 0
+push constant 20
+push constant 511
+push constant 20
+call Screen.drawLine 4
+pop temp 0
+push constant 200
+push constant 128
+push constant 305
+push constant 128
+call Screen.drawLine 4
+pop temp 0
+push constant 200
+push constant 100
+push constant 305
+push constant 100
+call Screen.drawLine 4
+pop temp 0
+push constant 235
+push constant 70
+push constant 235
+push constant 158
+call Screen.drawLine 4
+pop temp 0
+push constant 270
+push constant 70
+push constant 270
+push constant 158
+call Screen.drawLine 4
+pop temp 0
+push constant 0
+push constant 200
+push constant 511
+push constant 200
+call Screen.drawLine 4
+pop temp 0
+push constant 0
+call Game.drawO 1
+pop temp 0
+push constant 1
+call Game.drawO 1
+pop temp 0
+push constant 2
+call Game.drawO 1
+pop temp 0
+push constant 3
+call Game.drawO 1
+pop temp 0
+push constant 4
+call Game.drawO 1
+pop temp 0
+push constant 5
+call Game.drawO 1
+pop temp 0
+push constant 6
+call Game.drawO 1
+pop temp 0
+push constant 7
+call Game.drawO 1
+pop temp 0
+push constant 8
+call Game.drawO 1
+pop temp 0
+push constant 0
+return
+function Game.dispose 0
+push constant 0
+return

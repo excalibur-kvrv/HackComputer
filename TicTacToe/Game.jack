@@ -1,0 +1,156 @@
+class Game {
+  field int x;
+
+  constructor Game new() {
+    let x = 1;
+    return this;
+  }
+
+  function void drawX(int position) {
+    if (position = 0) {
+      do Screen.drawLine(215, 80, 225, 90);
+      do Screen.drawLine(225, 80, 215, 90);
+    }
+
+    if (position = 1) {
+      do Screen.drawLine(248, 80, 258, 90);
+      do Screen.drawLine(258, 80, 248, 90);
+    }
+
+    if (position = 2) {
+      do Screen.drawLine(280, 80, 290, 90);
+      do Screen.drawLine(290, 80, 280, 90);
+    }
+
+    if (position = 3) {
+      do Screen.drawLine(215, 110, 225, 120);
+      do Screen.drawLine(225, 110, 215, 120);
+    }
+
+    if (position = 4) {
+      do Screen.drawLine(248, 110, 258, 120);
+      do Screen.drawLine(258, 110, 248, 120);
+    }
+
+    if (position = 5) {
+      do Screen.drawLine(280, 110, 290, 120);
+      do Screen.drawLine(290, 110, 280, 120);
+    }
+
+    if (position = 6) {
+      do Screen.drawLine(215, 138, 225, 148);
+      do Screen.drawLine(225, 138, 215, 148);
+    }
+
+    if (position = 7) {
+      do Screen.drawLine(248, 138, 258, 148);
+      do Screen.drawLine(258, 138, 248, 148);
+    }
+
+    if (position = 8) {
+      do Screen.drawLine(280, 138, 290, 148);
+      do Screen.drawLine(290, 138, 280, 148);
+    }
+
+    return;
+  }
+
+  function void drawO(int position) {
+    if (position = 0) {
+      do Screen.drawCircle(220, 85, 7);
+      do Screen.setColor(false);
+      do Screen.drawCircle(220, 85, 6);
+      do Screen.setColor(true);
+    }
+
+    if (position = 1) {
+      do Screen.drawCircle(252, 85, 7);
+      do Screen.setColor(false);
+      do Screen.drawCircle(252, 85, 6);
+      do Screen.setColor(true);
+    }
+
+    if (position = 2) {
+      do Screen.drawCircle(285, 85, 7);
+      do Screen.setColor(false);
+      do Screen.drawCircle(285, 85, 6);
+      do Screen.setColor(true);
+    }
+
+    if (position = 3) {
+      do Screen.drawCircle(220, 115, 7);
+      do Screen.setColor(false);
+      do Screen.drawCircle(220, 115, 6);
+      do Screen.setColor(true);
+    }
+
+    if (position = 4) {
+      do Screen.drawCircle(252, 115, 7);
+      do Screen.setColor(false);
+      do Screen.drawCircle(252, 115, 6);
+      do Screen.setColor(true);
+    }
+
+    if (position = 5) {
+      do Screen.drawCircle(285, 115, 7);
+      do Screen.setColor(false);
+      do Screen.drawCircle(285, 115, 6);
+      do Screen.setColor(true);
+    }
+
+    if (position = 6) {
+      do Screen.drawCircle(220, 143, 7);
+      do Screen.setColor(false);
+      do Screen.drawCircle(220, 143, 6);
+      do Screen.setColor(true);
+    }
+
+    if (position = 7) {
+      do Screen.drawCircle(252, 143, 7);
+      do Screen.setColor(false);
+      do Screen.drawCircle(252, 143, 6);
+      do Screen.setColor(true);
+    }
+
+    if (position = 8) {
+      do Screen.drawCircle(285, 143, 7);
+      do Screen.setColor(false);
+      do Screen.drawCircle(285, 143, 6);
+      do Screen.setColor(true);
+    }
+    return;
+  }
+
+  function void start() {
+    // Draw header line
+    do Output.moveCursor(0, 25);
+    do Output.printString("TIC TAC TOE GAME");
+    do Screen.setColor(true);
+    do Screen.drawLine(0, 20, 511, 20);
+
+    // Draw board
+    do Screen.drawLine(200, 128, 305, 128);
+    do Screen.drawLine(200, 100, 305, 100);
+    do Screen.drawLine(235, 70, 235, 158);
+    do Screen.drawLine(270, 70, 270, 158);
+
+    // Draw footer line
+    do Screen.drawLine(0, 200, 511, 200);
+
+    do Game.drawO(0);
+    do Game.drawO(1);
+    do Game.drawO(2);
+    do Game.drawO(3);
+    do Game.drawO(4);
+    do Game.drawO(5);
+    do Game.drawO(6);
+    do Game.drawO(7);
+    do Game.drawO(8);
+
+    return;
+  }
+
+  function void dispose() {
+    return;
+  }
+}
