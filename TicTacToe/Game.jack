@@ -83,7 +83,6 @@ class Game {
 
   method void drawX(int position, int player) {
     while ((position < 0) | (position > 8) | (~(board[position] = 0))) {
-      do Output.printInt(board[position]);
       do Output.moveCursor(20, 0);
       let position = Keyboard.readInt("Please enter a valid unoccupied position between [0-8]:");
     }
@@ -152,7 +151,6 @@ class Game {
     let position = p;
     
     while ((position < 0) | (position > 8) | (~(board[position] = 0))) {
-      do Output.printInt(board[position]);
       do Output.moveCursor(20, 0);
       let position = Keyboard.readInt("Please enter a valid unoccupied position between [0-8]:");
     }
@@ -285,6 +283,7 @@ class Game {
       let gameOver = isWinner(1);
 
       if (gameOver = true) {
+        do Output.printString("Game Over O Won");
         return;
       }
 
@@ -292,6 +291,9 @@ class Game {
       let position = Keyboard.readInt("Enter position of X between [0-9]:");
       do drawX(position, 2); 
       let gameOver = isWinner(2);
+      if (gameOver = true) {
+        do Output.printString("Game Over X Won");
+      }
     }
     
     return;
