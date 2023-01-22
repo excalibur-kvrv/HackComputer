@@ -4,6 +4,7 @@ class Main {
     let game = Game.new();
     do game.start();
     do game.dispose();
+    do Output.printString("Game Over");
     return;
   }
 }

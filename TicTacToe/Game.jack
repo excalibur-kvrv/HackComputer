@@ -1,66 +1,170 @@
 class Game {
-  field int x;
+  field Array board;
+  field Array winCombinations;
+  field boolean gameOver;
 
   constructor Game new() {
-    let x = 1;
+    var Array temp;
+
+    let board = Array.new(9);
+    let board[0] = 0;
+    let board[1] = 0;
+    let board[2] = 0;
+    let board[3] = 0;
+    let board[4] = 0;
+    let board[5] = 0;
+    let board[6] = 0;
+    let board[7] = 0;
+    let board[8] = 0;
+
+    let gameOver = false;
+    
+    // Multi dimension array hack
+    let winCombinations = Array.new(8);
+
+    // 0 1 2
+    let temp = Array.new(3);
+    let temp[0] = 0;
+    let temp[1] = 1;
+    let temp[2] = 2;
+    let winCombinations[0] = temp;
+
+    // 3 4 5
+    let temp = Array.new(3);
+    let temp[0] = 3;
+    let temp[1] = 4;
+    let temp[2] = 5;
+    let winCombinations[1] = temp;
+
+    // 6 7 8
+    let temp = Array.new(3);
+    let temp[0] = 6;
+    let temp[1] = 7;
+    let temp[2] = 8;
+    let winCombinations[2] = temp;
+
+    // 0 3 6
+    let temp = Array.new(3);
+    let temp[0] = 0;
+    let temp[1] = 3;
+    let temp[2] = 6;
+    let winCombinations[3] = temp;
+
+    // 1 4 7
+    let temp = Array.new(3);
+    let temp[0] = 1;
+    let temp[1] = 4;
+    let temp[2] = 7;
+    let winCombinations[4] = temp;
+
+    // 2 5 8
+    let temp = Array.new(3);
+    let temp[0] = 2;
+    let temp[1] = 5;
+    let temp[2] = 8;
+    let winCombinations[5] = temp;
+
+    // 0 4 8
+    let temp = Array.new(3);
+    let temp[0] = 0;
+    let temp[1] = 4;
+    let temp[2] = 8;
+    let winCombinations[6] = temp;
+
+    // 2 4 6
+    let temp = Array.new(3);
+    let temp[0] = 2;
+    let temp[1] = 4;
+    let temp[2] = 6;
+    let winCombinations[7] = temp;
+
     return this;
   }
 
-  function void drawX(int position) {
+  method void drawX(int position, int player) {
+    while ((position < 0) | (position > 8) | (~(board[position] = 0))) {
+      do Output.printInt(board[position]);
+      do Output.moveCursor(20, 0);
+      let position = Keyboard.readInt("Please enter a valid unoccupied position between [0-8]:");
+    }
+    do Output.moveCursor(20, 0);
+    do Output.printString("                                                                   ");
+
     if (position = 0) {
       do Screen.drawLine(215, 80, 225, 90);
       do Screen.drawLine(225, 80, 215, 90);
+      let board[0] = player;
     }
 
     if (position = 1) {
       do Screen.drawLine(248, 80, 258, 90);
       do Screen.drawLine(258, 80, 248, 90);
+      let board[1] = player;
     }
 
     if (position = 2) {
       do Screen.drawLine(280, 80, 290, 90);
       do Screen.drawLine(290, 80, 280, 90);
+      let board[2] = player;
     }
 
     if (position = 3) {
       do Screen.drawLine(215, 110, 225, 120);
       do Screen.drawLine(225, 110, 215, 120);
+      let board[3] = player;
     }
 
     if (position = 4) {
       do Screen.drawLine(248, 110, 258, 120);
       do Screen.drawLine(258, 110, 248, 120);
+      let board[4] = player;
     }
 
     if (position = 5) {
       do Screen.drawLine(280, 110, 290, 120);
       do Screen.drawLine(290, 110, 280, 120);
+      let board[5] = player;
     }
 
     if (position = 6) {
       do Screen.drawLine(215, 138, 225, 148);
       do Screen.drawLine(225, 138, 215, 148);
+      let board[6] = player;
     }
 
     if (position = 7) {
       do Screen.drawLine(248, 138, 258, 148);
       do Screen.drawLine(258, 138, 248, 148);
+      let board[7] = player;
     }
 
     if (position = 8) {
       do Screen.drawLine(280, 138, 290, 148);
       do Screen.drawLine(290, 138, 280, 148);
+      let board[8] = player;
     }
 
     return;
   }
 
-  function void drawO(int position) {
+  method void drawO(int p, int player) {
+    var int position;
+    let position = p;
+    
+    while ((position < 0) | (position > 8) | (~(board[position] = 0))) {
+      do Output.printInt(board[position]);
+      do Output.moveCursor(20, 0);
+      let position = Keyboard.readInt("Please enter a valid unoccupied position between [0-8]:");
+    }
+    do Output.moveCursor(20, 0);
+    do Output.printString("                                                                   ");
+
     if (position = 0) {
       do Screen.drawCircle(220, 85, 7);
       do Screen.setColor(false);
       do Screen.drawCircle(220, 85, 6);
       do Screen.setColor(true);
+      let board[0] = player;
     }
 
     if (position = 1) {
@@ -68,6 +172,7 @@ class Game {
       do Screen.setColor(false);
       do Screen.drawCircle(252, 85, 6);
       do Screen.setColor(true);
+      let board[1] = player;
     }
 
     if (position = 2) {
@@ -75,6 +180,7 @@ class Game {
       do Screen.setColor(false);
       do Screen.drawCircle(285, 85, 6);
       do Screen.setColor(true);
+      let board[2] = player;
     }
 
     if (position = 3) {
@@ -82,6 +188,7 @@ class Game {
       do Screen.setColor(false);
       do Screen.drawCircle(220, 115, 6);
       do Screen.setColor(true);
+      let board[3] = player;
     }
 
     if (position = 4) {
@@ -89,6 +196,7 @@ class Game {
       do Screen.setColor(false);
       do Screen.drawCircle(252, 115, 6);
       do Screen.setColor(true);
+      let board[4] = player;
     }
 
     if (position = 5) {
@@ -96,6 +204,7 @@ class Game {
       do Screen.setColor(false);
       do Screen.drawCircle(285, 115, 6);
       do Screen.setColor(true);
+      let board[5] = player;
     }
 
     if (position = 6) {
@@ -103,6 +212,7 @@ class Game {
       do Screen.setColor(false);
       do Screen.drawCircle(220, 143, 6);
       do Screen.setColor(true);
+      let board[6] = player;
     }
 
     if (position = 7) {
@@ -110,6 +220,7 @@ class Game {
       do Screen.setColor(false);
       do Screen.drawCircle(252, 143, 6);
       do Screen.setColor(true);
+      let board[7] = player;
     }
 
     if (position = 8) {
@@ -117,11 +228,41 @@ class Game {
       do Screen.setColor(false);
       do Screen.drawCircle(285, 143, 6);
       do Screen.setColor(true);
+      let board[8] = player;
     }
     return;
   }
 
-  function void start() {
+  method boolean isWinner(int player) {
+    var Array temp;
+    var int i, leftCount;
+
+    while (i < 8) {
+      let temp = winCombinations[i];
+      let i = i + 1;
+      if ((board[temp[0]] = player) & (board[temp[1]] = player) & (board[temp[2]] = player)) {
+        return true;
+      }
+    }
+
+    let i = 0;
+    let leftCount = 0;
+    while (i < 9) {
+      if (board[i] = 0) {
+        let leftCount = leftCount + 1;
+      } 
+      let i = i + 1;
+    }
+
+    if (leftCount = 0) {
+      return true;
+    }
+    return false;
+  }
+
+  method void start() {
+    var int position;
+
     // Draw header line
     do Output.moveCursor(0, 25);
     do Output.printString("TIC TAC TOE GAME");
@@ -137,20 +278,28 @@ class Game {
     // Draw footer line
     do Screen.drawLine(0, 200, 511, 200);
 
-    do Game.drawO(0);
-    do Game.drawO(1);
-    do Game.drawO(2);
-    do Game.drawO(3);
-    do Game.drawO(4);
-    do Game.drawO(5);
-    do Game.drawO(6);
-    do Game.drawO(7);
-    do Game.drawO(8);
+    while (~(gameOver = true)) {
+      do Output.moveCursor(20, 0);
+      let position = Keyboard.readInt("Enter position of O between [0-9]:");
+      do drawO(position, 1);
+      let gameOver = isWinner(1);
 
+      if (gameOver = true) {
+        return;
+      }
+
+      do Output.moveCursor(20, 0);
+      let position = Keyboard.readInt("Enter position of X between [0-9]:");
+      do drawX(position, 2); 
+      let gameOver = isWinner(2);
+    }
+    
     return;
   }
 
-  function void dispose() {
+  method void dispose() {
+    do board.dispose();
+    do winCombinations.dispose();
     return;
   }
 }
