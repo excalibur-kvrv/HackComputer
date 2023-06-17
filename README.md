@@ -15,9 +15,9 @@ Constuction of the computer is divided into two parts:-
 
 ## The Software System contains the below implementations:-
 
-- [x] A Compiler for the jack programming language which generates VM(Virtual machine) code.
-- [x] A VM translator for translating VM code to the assembly.
-- [x] A HackAssembler for translating assembly programs to 16-bit words that can run on the Hack machine.  
-- [ ] JackOS containing key algorithms and libraries for memory management, mathematical operations, etc.
-- [ ] A Tetris game written in jack that runs on top of the Hack computer.
-- [x] A Tic Tac Toe game written in jack that runs on top of the Hack computer. 
+- [x] A HackAssembler for translating Assembly programs to 16-bit words that can run on the Hack computer.
+- [x] A VM translator for translating VM code to Assembly.
+- [x] A Compiler for the Jack programming language which generates VM(Virtual machine) code.
+- [ ] JackOS containing key algorithms/libraries for memory management, mathematical operations, graphics, string and array support written in Jack.
+- [ ] A Tetris game written in Jack that runs on top of the Hack computer.
+- [x] A Tic Tac Toe game written in Jack that runs on top of the Hack computer. 
