@@ -5,10 +5,6 @@ import argparse
 import os
 
 
-def output_jack_tokens(token_type: str, token_value: str) -> str:
-    return f"<{token_type}> {token_value} </{token_type}>\n"
-
-
 if __name__ == "__main__":
     """usage:- python3 JackCompiler.py <path-to-jack file/directory>
 
