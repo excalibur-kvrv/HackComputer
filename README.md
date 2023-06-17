@@ -1,6 +1,6 @@
 # Hack Computer
 
-This repo contains the WIP implmentation of the Hack Computer based on the book "Elements of computing systems 2nd edition".
+This repo contains the WIP implementation of the Hack Computer based on the book "Elements of computing systems 2nd edition".
 
 Constuction of the computer is divided into two parts:-
 1. Hardware System
