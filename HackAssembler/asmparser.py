@@ -27,11 +27,14 @@ class Parser:
     def __first_pass(self):
         instruction_count = 0
         labels_found = 0
+        
         for line in self.__file_contents:
             current_line = self.__strip_comments(line).strip()
+            
             if current_line:
                 self.parsed_line = current_line
                 instruction_count += 1
+                
                 if self.instructionType() == InstructionType.L_INSTRUCTION:
                     self.symbol_table.addEntry(self.symbol(), instruction_count - 1 - labels_found)
                     labels_found += 1
@@ -77,10 +80,12 @@ class Parser:
     
     def instructionType(self) -> InstructionType:
         current_line = self.parsed_line
+        
         if current_line.startswith("("):
             return InstructionType.L_INSTRUCTION
         elif current_line.startswith("@"):
             return InstructionType.A_INSTRUCTION
+        
         return InstructionType.C_INSTRUCTION
     
     def symbol(self) -> str:
@@ -88,12 +93,15 @@ class Parser:
             return self.parsed_line[1:-1]
         elif self.instructionType() == InstructionType.A_INSTRUCTION:
             return self.parsed_line[1:]
+        
         return None
     
-    def __c_matches(self, index):
+    def __c_matches(self, index) -> str:
         matches = re.search(C_INS_PATTERN, self.parsed_line)
+        
         if matches.groups()[index]:
             return matches.groups()[index]
+        
         return ""
     
     def dest(self) -> str:

@@ -17,7 +17,7 @@ if __name__ == "__main__":
     
     
     if not os.path.exists(asm_file) or not asm_file.endswith(".asm"):
-        raise ValueError("Enter a valid asm file path")
+        raise ValueError(f"Enter a valid asm file path, supplied path: {asm_file} does not exist")
     
     output_path, file_name = os.path.split(asm_file)
     parser = Parser(asm_file)
@@ -29,7 +29,6 @@ if __name__ == "__main__":
             instruction_type = parser.instructionType()
             
             if instruction_type == InstructionType.A_INSTRUCTION:
-        
                 symbol = parser.symbol()
         
                 if not symbol.isdigit():

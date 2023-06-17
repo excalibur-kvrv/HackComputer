@@ -27,7 +27,7 @@ class SymbolTable:
             "KBD": 24576
         }
     
-    def addEntry(self, symbol: str, address: str):
+    def addEntry(self, symbol: str, address: int):
         self.__symbol_table[symbol] = address
     
     def contains(self, symbol: str) -> bool:
