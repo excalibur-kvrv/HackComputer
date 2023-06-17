@@ -28,12 +28,24 @@ if __name__ == "__main__":
             parser.advance()
             instruction_type = parser.instructionType()
             
-            if instruction_type == InstructionType.A_INSTRUCTION or instruction_type == InstructionType.L_INSTRUCTION:
+            if instruction_type == InstructionType.A_INSTRUCTION:
+        
                 symbol = parser.symbol()
+        
+                if not symbol.isdigit():
+                    if parser.symbol_table.contains(symbol):
+                        symbol = parser.symbol_table.getAddress(symbol)
+                    else:
+                        address = parser.available_ram
+                        parser.available_ram = parser.available_ram + 1
+                        parser.symbol_table.addEntry(symbol, address)
+                        symbol = address
+            
                 bin_val = bin(int(symbol)).replace("0b", "")
                 bin_val = f"{(16 - len(bin_val)) * '0'}{bin_val}\n" 
                 file.write(bin_val)
-            else:
+                        
+            elif instruction_type == InstructionType.C_INSTRUCTION:
                 dest = opcode_gen.dest(parser.dest())
                 comp = opcode_gen.comp(parser.comp())
                 jump = opcode_gen.jump(parser.jump())

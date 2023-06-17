@@ -1,4 +1,5 @@
 from constants import InstructionType
+from SymbolTable import SymbolTable
 import os
 import re
 
@@ -12,6 +13,8 @@ class Parser:
         self.current_line_no = 0
         self.parsed_line = ""
         self.completed = False
+        self.symbol_table = SymbolTable()
+        self.available_ram = 16
         
         if not os.path.isfile(input_file):
             raise ValueError(f"Supplied path: {input_file}, is not a file")
@@ -19,6 +22,20 @@ class Parser:
         with open(input_file) as file:
             self.__file_contents = file.readlines()
         
+        self.__first_pass()
+    
+    def __first_pass(self):
+        instruction_count = 0
+        labels_found = 0
+        for line in self.__file_contents:
+            current_line = self.__strip_comments(line).strip()
+            if current_line:
+                self.parsed_line = current_line
+                instruction_count += 1
+                if self.instructionType() == InstructionType.L_INSTRUCTION:
+                    self.symbol_table.addEntry(self.symbol(), instruction_count - 1 - labels_found)
+                    labels_found += 1
+
     
     def hasMoreLines(self) -> bool:
         return not self.completed 
@@ -31,8 +48,9 @@ class Parser:
                 chars.append(string[0])
                 
             for i in range(1, len(string)):
-                if not (string[i] == "/" and string[i - 1] == "/") and string[i] != " ":
-                    chars.append(string[i])
+                if not (string[i] == "/" and string[i - 1] == "/"):
+                    if string[i] != " ":
+                        chars.append(string[i])
                 else:
                     break
             
