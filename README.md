@@ -7,7 +7,7 @@ Constuction of the computer is divided into two parts:-
 2. Software System
 
 ## The Hardware System contains the below implementations
-- [x] Elementary circuits like NOR, XOR, MUX, etc implemented in a Hardware description language.
+- [x] Elementary circuits like DMUX, XOR, MUX, etc implemented in a Hardware description language.
 - [ ] ALU, Adder, etc ciruits for performing boolean arithmetic based on input bits.
 - [ ] Memory ciruits like RAM, Registers, etc for storing bits.
 - [ ] A Computer architecture for connecting the Arithmetic and Memory circuits to realize the Hack Computer.
@@ -19,5 +19,4 @@ Constuction of the computer is divided into two parts:-
 - [x] A VM translator for translating VM(Virtual machine) code to Assembly.
 - [x] A Compiler for the Jack programming language which generates VM(Virtual machine) code.
 - [ ] JackOS containing key algorithms/libraries for Memory management, Math, I/O, String and Array processing support written in Jack.
-- [ ] A Tetris game written in Jack that runs on top of the Hack computer.
 - [x] A Tic Tac Toe game written in Jack that runs on top of the Hack computer. 
