@@ -7,7 +7,7 @@ Constuction of the computer is divided into two parts:-
 2. Software System
 
 ## The Hardware System contains the below implementations
-- [ ] Elementary circuits like NOR, XOR, MUX, etc implemented in a Hardware description language.
+- [x] Elementary circuits like NOR, XOR, MUX, etc implemented in a Hardware description language.
 - [ ] ALU, Adder, etc ciruits for performing boolean arithmetic based on input bits.
 - [ ] Memory ciruits like RAM, Registers, etc for storing bits.
 - [ ] A Computer architecture for connecting the Arithmetic and Memory circuits to realize the Hack Computer.
